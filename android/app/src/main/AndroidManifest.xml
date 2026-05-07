@@ -6,7 +6,7 @@
     <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
     <uses-permission android:name="android.permission.VIBRATE"/>
     <application
-        android:label="Neptun 2"
+        android:label="Neptun Mobile"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
