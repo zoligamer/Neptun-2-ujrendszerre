@@ -28,12 +28,17 @@ import '../storage.dart';
   }
   
   class _APIRequest{
-    static Future<String> postRequest(Uri url, String requestBody) async{
+    // POST-REQUEST for old API and modern login
+    static Future<String> postRequest(Uri url, String requestBody,{String? bearerToken}) async{
       HttpOverrides.global = NeptunCerts.getCerts();
   
       final client = http.Client();
       final request = http.Request('POST', url);
+
       request.headers['Content-Type'] = 'application/json';
+      if (bearerToken != null && bearerToken.isNotEmpty) {
+        request.headers['Authorization'] = 'Bearer $bearerToken';
+      }
       request.body = requestBody;
 
       var response;
@@ -42,17 +47,64 @@ import '../storage.dart';
           // Read and return the response
           return response.stream.bytesToString();
         });
+
+        if (response != null) {
+          String responseString = response.toString().trim();
+          if (responseString.startsWith('<!DOCTYPE html') || responseString.startsWith('<html')){
+            AppAnalitics.sendAnaliticsData(AppAnalitics.ERROR, 'api_coms.dart => _APIRequest.postRequest() Erorr: HTML response recieved from $url');
+            client.close();
+            return '{"ErrorMessage": "Hibás URL vagy a Neptun szervere weboldalt küldött válaszként"}';
+          }
+        }
       }
       catch(error){
         AppAnalitics.sendAnaliticsData(AppAnalitics.ERROR, 'api_coms.dart => _APIRequest.postRequest() NeptunError: PostRequest Error: $error');
+        client.close();
+        return '{"ErrorMessage": "Hálózati hiba: $error"}';
       }
 
       // Close the client when done
       client.close();
   
-      return response;
+      return response ?? '{}';
     }
-  
+
+
+    //new GET REQUEST for modern API
+    static Future<String> getRequest(Uri url, {required String bearerToken}) async {
+      HttpOverrides.global = NeptunCerts.getCerts();
+
+      final client = http.Client();
+      final request = http.Request('GET', url);
+
+      // Új API-nál KÖTELEZŐ a token a GET kéréseknél is!
+      request.headers['Content-Type'] = 'application/json';
+      request.headers['Authorization'] = 'Bearer $bearerToken';
+
+      var response;
+      try {
+        response = await client.send(request).then((response) {
+          return response.stream.bytesToString();
+        });
+
+        if (response != null) {
+          String responseString = response.toString().trim();
+          if (responseString.startsWith('<!DOCTYPE html') || responseString.startsWith('<html')) {
+            AppAnalitics.sendAnaliticsData(AppAnalitics.ERROR, 'api_coms.dart => _APIRequest.getRequest() Error: HTML response received from $url');
+            client.close();
+            return '{"ErrorMessage": "Weboldal érkezett JSON helyett!"}';
+          }
+        }
+      } catch (error) {
+        AppAnalitics.sendAnaliticsData(AppAnalitics.ERROR, 'api_coms.dart => _APIRequest.getRequest() Error: $error');
+        client.close();
+        return '{"ErrorMessage": "Hálózati hiba: $error"}';
+      }
+
+      client.close();
+      return response ?? '{}';
+    }
+
     static String getGenericPostData(String username, String password){
       return
         '{'
@@ -77,7 +129,12 @@ import '../storage.dart';
       final url = Uri.parse(storage.DataCache.getInstituteUrl()! + URLs.PERIODTERMS_URL);
       final request = await _APIRequest.postRequest(url, _APIRequest.getGenericPostData(username!, password!));
 
-      List<dynamic> termList = conv.json.decode(request)['PeriodTermsList'];
+      final decoded = conv.json.decode(request);
+      if (decoded['PeriodTermsList'] == null) return []; // Ha nincs lista, adunk egy üreset, és nem fagy ki!
+      List<dynamic> termList = decoded['PeriodTermsList'];
+
+
+      /*List<dynamic> termList = conv.json.decode(request)['PeriodTermsList'];  OLD CODE*/
       List<Term> terms = [];
       for (var term in termList){
         final map = term as Map<String, dynamic>;
@@ -128,22 +185,157 @@ import '../storage.dart';
     static Future<bool> validateLoginCredentials(Institute institute, String username, String password) async{
       return validateLoginCredentialsUrl(institute.URL, username, password);
     }
+    //
+    static Future<bool> validateLoginCredentialsUrl(String rawUrl, String username, String password) async {
+      if(username == 'DEMO' && password == 'DEMO'){
+        await storage.DataCache.setIsDemoAccount(1);
+        return true;
+      }
+      else if(storage.DataCache.getHasICSFile() ?? false){ // <-- EZ IS ÚJ (kell az offline módhoz)
+        return true;
+      }
 
+      // 1. ELŐKÉSZÍTÉS: Levágjuk a felesleges perjelet a végéről, ha van
+      String url = rawUrl.trim();
+      if (url.endsWith('/')) url = url.substring(0, url.length - 1);
+
+      // Eltároljuk, hogy az eredeti linkben volt-e aspx
+      bool containsAspx = url.toLowerCase().contains('.aspx');
+
+      // 2. TISZTÍTÁS: Levágjuk a login.aspx-et vagy MobileService.svc-t, hogy megkapjuk az ALAP linket
+      String baseUrl = url.replaceAll(RegExp(r'/login(\.aspx)?$', caseSensitive: false), '');
+      baseUrl = baseUrl.replaceAll(RegExp(r'/MobileService\.svc$', caseSensitive: false), '');
+
+      // --- ÚJ: ÓBUDAI LISTÁS LINK JAVÍTÁSA ---
+      // Ha a beépített listából választod ki, ez átirányít az új API-ra!
+      if (baseUrl.toLowerCase().contains('uni-obuda.hu/hallgato')) {
+        baseUrl = baseUrl.replaceAll(RegExp(r'/hallgato', caseSensitive: false), '/ujhallgato');
+      }
+
+      // --- LOGIKAI KAPU ---
+      if (containsAspx) {
+        // HA VAN ASPX -> RÉGI RENDSZER PRÓBA ELŐSZÖR
+        bool success = await _tryOldLogin(baseUrl, username, password);
+        if (success) return true;
+        // Ha a régi nem ment, végső mentőövnek megpróbáljuk az újat is
+        return await _tryModernLogin(baseUrl, username, password);
+      } else {
+        // HA NINCS ASPX -> ÚJ RENDSZER PRÓBA ELŐSZÖR
+        bool success = await _tryModernLogin(baseUrl, username, password);
+        if (success) return true;
+        // Ha az új nem ment, hátha mégis régi (csak nem írta ki az aspx-et)
+        return await _tryOldLogin(baseUrl, username, password);
+      }
+    }
+
+    // --- SEGÉDFÜGGVÉNY: ÚJ MODEREN LOGIN ---
+    static Future<bool> _tryModernLogin(String baseUrl, String username, String password) async {
+      try {
+        final modernApiUrl = Uri.parse("$baseUrl/api/Account/Authenticate");
+        final body = conv.jsonEncode({
+          "userName": username,
+          "password": password,
+          "captcha": "",
+          "captchaIdentifier": "",
+          "token": "",
+          "LCID": 1038
+        });
+
+        final responseRaw = await _APIRequest.postRequest(modernApiUrl, body);
+        if (responseRaw.trim().startsWith('{')) {
+          final response = conv.jsonDecode(responseRaw);
+          if (response["data"] != null && response["data"]["accessToken"] != null) {
+            await storage.DataCache.setAccessToken(response["data"]["accessToken"]);
+            await storage.DataCache.setIsModernApi(true);
+            await storage.DataCache.setInstituteUrl(baseUrl);
+            return true;
+          }
+        }
+      } catch (e) { }
+      return false;
+    }
+
+    // --- SEGÉDFÜGGVÉNY: RÉGI LOGIN ---
+    static Future<bool> _tryOldLogin(String baseUrl, String username, String password) async {
+      try {
+        final oldApiUrl = Uri.parse("$baseUrl/MobileService.svc" + URLs.TRAININGS_URL);
+        final request = await _APIRequest.postRequest(
+            oldApiUrl,
+            _APIRequest.getGenericPostData(username, password)
+        );
+
+        if (request.trim().startsWith('{')) {
+          final decodedResponse = conv.json.decode(request);
+          if (decodedResponse["ErrorMessage"] == null) {
+            await storage.DataCache.setIsModernApi(false);
+            await storage.DataCache.setInstituteUrl("$baseUrl/MobileService.svc");
+            return true;
+          }
+        }
+      } catch (e) { }
+      return false;
+    }
+
+    //
+
+    /* STABLE
     static Future<bool> validateLoginCredentialsUrl(String url, String username, String password)async{
       if(username == 'DEMO' && password == 'DEMO'){
         await storage.DataCache.setIsDemoAccount(1);
-        AppAnalitics.sendAnaliticsData(AppAnalitics.INFO, 'api_coms.dart => InstitudesRequest.validateLoginCredentials() Info: Login on demo account');
+        /*AppAnalitics.sendAnaliticsData(AppAnalitics.INFO, 'api_coms.dart => InstitudesRequest.validateLoginCredentials() Info: Login on demo account');*/
         return true;
       }
+
       else if(storage.DataCache.getHasICSFile() ?? false){
         return true;
       }
-      final request = await _APIRequest.postRequest(Uri.parse(url + URLs.TRAININGS_URL), _APIRequest.getGenericPostData(username, password));
-      if(conv.json.decode(request)["ErrorMessage"] != null){
-        AppAnalitics.sendAnaliticsData(AppAnalitics.ERROR, 'api_coms.dart => InstitudesRequest.validateLoginCredentials() NeptunError: ${conv.json.decode(request)["ErrorMessage"]}');
+      //new:obudai uni (modern sso) handling
+      else if(url.contains("uni-obuda.hu")){
+        try {
+          final authUrl= Uri.parse("https://neptun.uni-obuda.hu/ujhallgato/api/Account/Authenticate");
+
+          final body = conv.jsonEncode({
+            "userName": username,
+            "password":password,
+            "captcha":"",
+            "captchaIdentifier":"",
+            "token":"",
+            "LCID":1038
+          });
+
+          //call new postRequest method
+          final responseRaw = await _APIRequest.postRequest(authUrl, body);
+          final response = conv.jsonDecode(responseRaw);
+
+          if (response["data"] != null && response["data"]["accessToken"] != null) {
+            //Success! Save the JWT token to storage.
+            final token = response["data"]["accessToken"];
+            await storage.DataCache.setAccessToken(token);
+            return true;
+          }
+          return false;
+        } catch (e) {
+          AppAnalitics.sendAnaliticsData(AppAnalitics.ERROR, 'api_coms.dart => ÓE Login Error: $e');
+          return false;
+        }
       }
-      return conv.json.decode(request)["ErrorMessage"] == null;
-    }
+      else {
+        final request = await _APIRequest.postRequest(
+          Uri.parse(url + URLs.TRAININGS_URL),
+          _APIRequest.getGenericPostData(username, password)
+        );
+        if (conv.json.decode(request)["ErrorMessage"] != null) {
+          AppAnalitics.sendAnaliticsData(AppAnalitics.ERROR, 'api_coms.dart => NeptunError: ${conv.json.decode(request)["ErrorMessage"]}');
+        }
+        return conv.json.decode(request)["ErrorMessage"] == null;
+      }
+      //old code... ^gone here lol
+      // final request = await _APIRequest.postRequest(Uri.parse(url + URLs.TRAININGS_URL), _APIRequest.getGenericPostData(username, password));
+      // if(conv.json.decode(request)["ErrorMessage"] != null){
+      //   AppAnalitics.sendAnaliticsData(AppAnalitics.ERROR, 'api_coms.dart => InstitudesRequest.validateLoginCredentials() NeptunError: ${conv.json.decode(request)["ErrorMessage"]}');
+      // }
+      // return conv.json.decode(request)["ErrorMessage"] == null;
+    }*/
 
     static Future<int?> getFirstStudyweek() async{
       final periods = await PeriodsRequest.getPeriods();
@@ -192,74 +384,165 @@ import '../storage.dart';
   }
   
   class CalendarRequest{
-    static List<CalendarEntry> getCalendarEntriesFromJSON(String json){
-      if(storage.DataCache.getIsDemoAccount()!){
-        final now = DateTime.now();
-        return <CalendarEntry>[
-          CalendarEntry(DateTime(now.year, now.month, now.day, now.hour + 2, now.minute, 0).millisecondsSinceEpoch.toString(), DateTime(now.year, now.month, now.day, now.hour + 2, now.minute + 45, 0).millisecondsSinceEpoch.toString(), 'Aktív óra', 'Jelenlegi', false),
-          //CalendarEntry(DateTime(now.year, now.month, 1, 0, 0, 0).millisecondsSinceEpoch.toString(), DateTime(now.year, now.month, 1, 23, 23, 23).millisecondsSinceEpoch.toString(), 'DEMO helyszín 1', 'DEMO név', false),
-          CalendarEntry(DateTime(now.year, now.month, 2, 1, 1, 1).millisecondsSinceEpoch.toString(), DateTime(now.year, now.month, 2, 22, 22, 22).millisecondsSinceEpoch.toString(), 'DEMO helyszín 2', 'DEMO név', false),
-          //CalendarEntry(DateTime(now.year, now.month, 3, 2, 2, 2).millisecondsSinceEpoch.toString(), DateTime(now.year, now.month, 3, 11, 11, 11).millisecondsSinceEpoch.toString(), 'DEMO helyszín 3', 'DEMO név', false),
-          CalendarEntry(DateTime(now.year, now.month, 3, 3, 3, 3).millisecondsSinceEpoch.toString(), DateTime(now.year, now.month, 4, 10, 10, 10).millisecondsSinceEpoch.toString(), 'DEMO helyszín 4', 'DEMO név', false),
-          CalendarEntry(DateTime(now.year, now.month, 3, 3, 3, 3).millisecondsSinceEpoch.toString(), DateTime(now.year, now.month, 4, 10, 10, 10).millisecondsSinceEpoch.toString(), 'DEMO helyszín 4', 'DEMO vizsga', true),
-          CalendarEntry(DateTime(now.year, now.month, 4, 3, 3, 3).millisecondsSinceEpoch.toString(), DateTime(now.year, now.month, 4, 10, 10, 10).millisecondsSinceEpoch.toString(), 'DEMO helyszín 4', 'DEMO név', false),
-          CalendarEntry(DateTime(now.year, now.month, 4, 3, 3, 3).millisecondsSinceEpoch.toString(), DateTime(now.year, now.month, 4, 14, 10, 10).millisecondsSinceEpoch.toString(), 'DEMO helyszín 4', 'DEMO név', false),
-          CalendarEntry(DateTime(now.year, now.month, 4, 3, 3, 3).millisecondsSinceEpoch.toString(), DateTime(now.year, now.month, 4, 19, 10, 10).millisecondsSinceEpoch.toString(), 'DEMO helyszín 5', 'DEMO név', false),
-          CalendarEntry(DateTime(now.year, now.month, 5, 4, 4, 4).millisecondsSinceEpoch.toString(), DateTime(now.year, now.month, 5, 9, 9, 9).millisecondsSinceEpoch.toString(), 'DEMO helyszín 5', 'DEMO név', false),
-          CalendarEntry(DateTime(now.year, now.month, 5, 6, 4, 4).millisecondsSinceEpoch.toString(), DateTime(now.year, now.month, 5, 12, 9, 9).millisecondsSinceEpoch.toString(), 'DEMO helyszín 8', 'DEMO név', false),
-          CalendarEntry(DateTime(now.year, now.month, 5, 8, 4, 4).millisecondsSinceEpoch.toString(), DateTime(now.year, now.month, 5, 12, 9, 9).millisecondsSinceEpoch.toString(), 'DEMO helyszín 8', 'DEMO név', false),
-          //CalendarEntry(DateTime(now.year, now.month, 6, 5, 5 ,5).millisecondsSinceEpoch.toString(), DateTime(now.year, now.month, 6, 20, 20, 20).millisecondsSinceEpoch.toString(), 'DEMO helyszín 6', 'DEMO név', false),
-          CalendarEntry(DateTime(now.year, now.month, 7, 6, 6, 6).millisecondsSinceEpoch.toString(), DateTime(now.year, now.month, 7, 6, 7, 7).millisecondsSinceEpoch.toString(), 'DEMO helyszín 7', 'DEMO név', false),
-          CalendarEntry(DateTime(now.year, now.month, now.day, 3, now.hour, 3).millisecondsSinceEpoch.toString(), DateTime(now.year, now.month, now.day, now.hour + 1, 10, 10).millisecondsSinceEpoch.toString(), 'DEMO helyszín', 'DEMO Értesítés Aznap', true),
-          CalendarEntry(DateTime(now.year, now.month, now.day + 1, now.hour, 3, 3).millisecondsSinceEpoch.toString(), DateTime(now.year, now.month, now.day + 1, now.hour + 1, 10, 10).millisecondsSinceEpoch.toString(), 'DEMO helyszín', 'DEMO Értesítés 1', true),
-          CalendarEntry(DateTime(now.year, now.month, now.day + 3, now.hour, 3, 3).millisecondsSinceEpoch.toString(), DateTime(now.year, now.month, now.day + 3, now.hour + 1, 10, 10).millisecondsSinceEpoch.toString(), 'DEMO helyszín', 'DEMO Értesítés 3', true),
-          CalendarEntry(DateTime(now.year, now.month, now.day + 7, now.hour, 3, 3).millisecondsSinceEpoch.toString(), DateTime(now.year, now.month, now.day + 7, now.hour + 1, 10, 10).millisecondsSinceEpoch.toString(), 'DEMO helyszín', 'DEMO Értesítés 7', true),
-          CalendarEntry(DateTime(now.year, now.month, now.day + 14, now.hour, 3, 3).millisecondsSinceEpoch.toString(), DateTime(now.year, now.month, now.day + 14, now.hour + 1, 10, 10).millisecondsSinceEpoch.toString(), 'DEMO helyszín', 'DEMO Értesítés 14', true),
-  
-          CalendarEntry(DateTime(now.year, now.month, now.day, now.hour + 1, now.minute + 11, 4).millisecondsSinceEpoch.toString(), DateTime(now.year, now.month, now.hour + 1, now.minute + 45, 9, 9).millisecondsSinceEpoch.toString(), 'DEMO helyszín 8', 'DEMO Óra', false),
-          CalendarEntry(DateTime(now.year, now.month, now.day, now.hour + 1, now.minute + 12, 4).millisecondsSinceEpoch.toString(), DateTime(now.year, now.month, now.hour + 1, now.minute + 45, 9, 9).millisecondsSinceEpoch.toString(), 'DEMO helyszín 8', 'DEMO Óra', false),
-          CalendarEntry(DateTime(now.year, now.month, now.day, now.hour + 1, now.minute + 13, 4).millisecondsSinceEpoch.toString(), DateTime(now.year, now.month, now.hour + 1, now.minute + 45, 9, 9).millisecondsSinceEpoch.toString(), 'DEMO helyszín 8', 'DEMO Óra', false),
 
-          CalendarEntry(DateTime(now.year, now.month, now.day, 17, 00).millisecondsSinceEpoch.toString(), DateTime(now.year, now.month, now.day, 18, 30).millisecondsSinceEpoch.toString(), 'Clipping', '1...', false),
-          CalendarEntry(DateTime(now.year, now.month, now.day, 18, 30).millisecondsSinceEpoch.toString(), DateTime(now.year, now.month, now.day, 20, 00).millisecondsSinceEpoch.toString(), 'Clipping', '2...', false),
-          CalendarEntry(DateTime(now.year, now.month, now.day + 1, 08, 00).millisecondsSinceEpoch.toString(), DateTime(now.year, now.month, now.day + 1, 09, 30).millisecondsSinceEpoch.toString(), 'Clipping', '3...', false),
-          CalendarEntry(DateTime(now.year, now.month, now.day + 1, 08, 00).millisecondsSinceEpoch.toString(), DateTime(now.year, now.month, now.day + 1, 09, 30).millisecondsSinceEpoch.toString(), 'Clipping', '4...', false),
-          CalendarEntry(DateTime(now.year, now.month, now.day+ 1, 09, 45).millisecondsSinceEpoch.toString(), DateTime(now.year, now.month, now.day + 1, 11, 15).millisecondsSinceEpoch.toString(), 'Clipping', '3...', false),
-          CalendarEntry(DateTime(now.year, now.month, now.day + 1, 09, 45).millisecondsSinceEpoch.toString(), DateTime(now.year, now.month, now.day + 1, 11, 15).millisecondsSinceEpoch.toString(), 'Clipping', '4...', false),
+    static String? _cachedTrainingId;
 
-        ];
+    static Future<String?> getStudentTrainingId() async {
+      if (_cachedTrainingId != null) return _cachedTrainingId;
+      if (!(storage.DataCache.getIsModernApi() ?? false)) return null;
+
+      try {
+        final token = await storage.DataCache.getAccessToken();
+        String baseUrl = storage.DataCache.getInstituteUrl() ?? '';
+
+        final url = Uri.parse("$baseUrl/api/Calendar/GetStudentTrainings");
+
+        final responseRaw = await _APIRequest.getRequest(url, bearerToken: token!);
+        final decoded = conv.json.decode(responseRaw);
+
+        if (decoded['data'] != null && decoded['data'].isNotEmpty) {
+          for (var training in decoded['data']) {
+            if (training['actualStudentTraining'] == true) {
+              _cachedTrainingId = training['studentTrainingId'];
+              return _cachedTrainingId;
+            }
+          }
+          _cachedTrainingId = decoded['data'][0]['studentTrainingId'];
+          return _cachedTrainingId;
+        }
+      } catch (e) { }
+      return null;
+    }
+    //
+
+    /* stable build code
+    static Future<String?> getStudentTrainingId() async {
+      // Ha már egyszer lekérte, azonnal visszaadja a memóriából
+      if (_cachedTrainingId != null) return _cachedTrainingId;
+
+      // Ha régi Neptunt használ a diák (pl. BME), akkor ez az egész nem kell
+      if (!storage.DataCache.getIsModernApi()) return null;
+
+      try {
+        final token = await storage.DataCache.getAccessToken();
+        final url = Uri.parse(storage.DataCache.getInstituteUrl()! + "/api/Calendar/GetStudentTrainings");
+
+        // Itt a tegnap megírt új GET metódusunkat használjuk!
+        final responseRaw = await _APIRequest.getRequest(url, bearerToken: token!);
+        final decoded = conv.json.decode(responseRaw);
+
+        if (decoded['data'] != null && decoded['data'].isNotEmpty) {
+          // Megkeressük az "Aktuális" félévhez tartozó képzést
+          for (var training in decoded['data']) {
+            if (training['actualStudentTraining'] == true) {
+              _cachedTrainingId = training['studentTrainingId'];
+              return _cachedTrainingId;
+            }
+          }
+          // Ha valamiért nincs megjelölve, visszaadjuk az elsőt a listából
+          _cachedTrainingId = decoded['data'][0]['studentTrainingId'];
+          return _cachedTrainingId;
+        }
+      } catch (e) {
+        AppAnalitics.sendAnaliticsData(AppAnalitics.ERROR, 'api_coms.dart => getStudentTrainingId() Error: $e');
       }
-      var list = <CalendarEntry>[].toList();
-      Map<String, dynamic> map = conv.json.decode(json);
-      if(map['calendarData'] == null) {
-        list.add(CalendarEntry(DateTime(1970, 1, 6).millisecondsSinceEpoch.toString(), DateTime.now().millisecondsSinceEpoch.toString(), 'ERROR', 'ERROR', false));
-        AppAnalitics.sendAnaliticsData(AppAnalitics.ERROR, 'api_coms.dart => CalendarRequest.getCalendarEntriesFromJSON() NeptunError: No Calendar data ${map["ErrorMessage"]}');
+      return null;
+    }*/
+
+    static List<CalendarEntry> getCalendarEntriesFromJSON(String jsonString) {
+      if (jsonString == '{}') return [];
+
+      final decoded = conv.json.decode(jsonString);
+      List<CalendarEntry> list = [];
+
+      if (storage.DataCache.getIsModernApi() ?? false) {
+        if (decoded['calendarData'] != null) {
+          for (var item in decoded['calendarData']) {
+            list.add(CalendarEntry.fromModern(
+              startEpoch: item['start_ms'],
+              endEpoch: item['end_ms'],
+              location: item['location'],
+              title: item['title'],
+              isExam: item['type'] == 1,
+              subjectCode: item['subjectCode'],
+              teacher: item['teacher'],
+            ));
+          }
+        }
         return list;
       }
-      List<dynamic> sublist = map['calendarData'];
-      //debug.log(sublist.toString());
-      final numberRegex = RegExp(r'\d+');
-      for(var item in sublist){
-        map = item as Map<String, dynamic>;
-        list.add(CalendarEntry(
-            numberRegex.firstMatch(map['start'].toString())!.group(0)!,
-            numberRegex.firstMatch(map['end'].toString())!.group(0)!,
-            map['location'].toString(),
-            map['title'].toString(),
-            map['type'] == 1));
+
+      if (decoded['calendarData'] != null) {
+        for (var item in decoded['calendarData']) {
+          list.add(CalendarEntry(
+            item['start'].toString().replaceAll(RegExp(r'[^0-9]'), ''),
+            item['end'].toString().replaceAll(RegExp(r'[^0-9]'), ''),
+            item['location'],
+            item['title'],
+            item['type'] == 1,
+          ));
+        }
       }
       return list;
     }
 
-    static Future<String> makeCalendarRequest(String calendarJson) async{
-      if(storage.DataCache.getIsDemoAccount()! || storage.DataCache.getHasICSFile()!){
+
+
+    static Future<String> makeCalendarRequest(String calendarJson) async {
+      if (storage.DataCache.getIsDemoAccount()! || storage.DataCache.getHasICSFile()!) {
         return '{}';
       }
-      final url = Uri.parse(storage.DataCache.getInstituteUrl()! + URLs.CALENDAR_URL);
-      final request = await _APIRequest.postRequest(url, calendarJson);
-      return request;
+
+      if (storage.DataCache.getIsModernApi() ?? false) {
+        try {
+          final trainingId = await getStudentTrainingId();
+          if (trainingId == null) return '{"calendarData": []}';
+
+          final oldPayload = conv.json.decode(calendarJson);
+          final startDateRaw = (oldPayload['startDate'] ?? oldPayload['StartDate']).toString();
+          final endDateRaw = (oldPayload['endDate'] ?? oldPayload['EndDate']).toString();
+
+          final numRegex = RegExp(r'\d+');
+          final startEpoch = int.parse(numRegex.firstMatch(startDateRaw)!.group(0)!);
+          final endEpoch = int.parse(numRegex.firstMatch(endDateRaw)!.group(0)!);
+
+          final startIso = DateTime.fromMillisecondsSinceEpoch(startEpoch).toIso8601String();
+          final endIso = DateTime.fromMillisecondsSinceEpoch(endEpoch).toIso8601String();
+
+          final token = await storage.DataCache.getAccessToken();
+          String baseUrl = storage.DataCache.getInstituteUrl() ?? '';
+
+          final url = Uri.parse("$baseUrl/api/Calendar/GetCalendarEvents?startDate=$startIso&endDate=$endIso&studentTrainingIds[0]=$trainingId&displayClasses=true&displayExams=true&displayOnlineMeetings=true&displayOtherEvents=true&displayPeriods=true&displayTasks=true");
+
+          final responseRaw = await _APIRequest.getRequest(url, bearerToken: token!);
+          final newApiData = conv.json.decode(responseRaw);
+
+          List<Map<String, dynamic>> mappedList = [];
+          if (newApiData['data'] != null) {
+            for (var event in newApiData['data']) {
+              mappedList.add({
+                'start_ms': DateTime.parse(event['startDate']).millisecondsSinceEpoch,
+                'end_ms': DateTime.parse(event['endDate']).millisecondsSinceEpoch,
+                'location': event['rooms'] ?? 'Nincs terem',
+                'title': event['name'] ?? 'Ismeretlen',
+                'type': event['eventTypeId'] == 1 ? 1 : 0,
+                'subjectCode': event['courseCode'] ?? '-',
+                'teacher': event['courseTutor'] ?? 'Nincs megadva',
+              });
+            }
+          }
+          return conv.jsonEncode({"calendarData": mappedList});
+        } catch (e) {
+          return '{"calendarData": []}';
+        }
+      } else {
+        final url = Uri.parse(storage.DataCache.getInstituteUrl()! + URLs.CALENDAR_URL);
+        final request = await _APIRequest.postRequest(url, calendarJson);
+        return request;
+      }
     }
-  
+
+
     static String getCalendarOneWeekJSON(String username, String password, int weekOffset){
       if(storage.DataCache.getIsDemoAccount()!){
         return '';
@@ -270,18 +553,18 @@ import '../storage.dart';
         previousMonday = previousMonday.subtract(const Duration(days: 7));
       }
       previousMonday = DateTime(previousMonday.year, previousMonday.month, previousMonday.day, 0, 0);
-  
+
       DateTime nextSunday = previousMonday.add(const Duration(days: 6, hours: 23, minutes: 59));
       if (nextSunday.weekday == 7) {
         nextSunday = nextSunday.subtract(const Duration(days: 7));
       }
-  
+
       DateTime startOfTargetWeek = previousMonday.add(Duration(days: weekOffset * 7));
       DateTime endOfTargetWeek = nextSunday.add(Duration(days: weekOffset * 7));//.add(Duration(days: 7));
-  
+
       final epochStart = startOfTargetWeek.millisecondsSinceEpoch;
       final epochEnd = endOfTargetWeek.millisecondsSinceEpoch;
-  
+
       return
         '{'
           '"UserLogin":"$username",'
@@ -294,7 +577,7 @@ import '../storage.dart';
         '}';
     }
   }
-  
+
   class MarkbookRequest{
     static Future<String> _getMarkbookJSon() async{
       if(storage.DataCache.getIsDemoAccount()!){
@@ -347,7 +630,10 @@ import '../storage.dart';
   
       String responseJson = await _getMarkbookJSon();
       List<dynamic> markbooklistRaw = [];
-      markbooklistRaw = conv.json.decode(responseJson)['MarkBookList'];
+      /*markbooklistRaw = conv.json.decode(responseJson)['MarkBookList']; OLD CODE*/
+      final decoded = conv.json.decode(responseJson);
+      if (decoded['MarkBookList'] == null) return null; // Ha nincs jegylista, biztonságosan kilép
+      markbooklistRaw = decoded['MarkBookList'];
   
       if(responseJson.isEmpty || markbooklistRaw.isEmpty){    // if we went thru all possible markbooks, but non was valid
         AppAnalitics.sendAnaliticsData(AppAnalitics.ERROR, 'api_coms.dart => MarkbookRequest._getMarkbookJSon() Error: No reponsejson, and markbooklist is empty');
@@ -617,7 +903,13 @@ import '../storage.dart';
 
     static List<MailEntry> getMailEntrysJson(String json){
       List<MailEntry> mails = [];
-      final result = conv.json.decode(json)['MessagesList'] as List<dynamic>;
+
+      final decoded = conv.json.decode(json);
+      if (decoded['MessagesList'] == null) return []; // Ha nincs levéllista, üres listát adunk vissza
+      final result = decoded['MessagesList'] as List<dynamic>;
+
+      /*final result = conv.json.decode(json)['MessagesList'] as List<dynamic>; OLD CODE*/
+
       for(var item in result){
         mails.add(MailEntry(item['Subject'], removeBloatFromMail(item['Detail']), item['Name'], int.parse(item['SendDate'].toString().replaceAll('\/Date(', '').replaceAll(')\/', '')), !item['IsNew'], item['PersonMessageId']));
       }
@@ -703,94 +995,84 @@ import '../storage.dart';
     getUrl() => Uri.parse(URL);
   }
   
-  class CalendarEntry{
-    late int startEpoch;
-    late int endEpoch;
-    late String location;
-    late String title;
-    late bool isExam;
-    late String subjectCode;
-    late String teacher;
+  //
+class CalendarEntry {
+  late int startEpoch;
+  late int endEpoch;
+  late String location;
+  late String title;
+  late bool isExam;
+  late String subjectCode;
+  late String teacher;
 
-    CalendarEntry(String start, String end, String loc, String rawTitle, this.isExam){
-      startEpoch = int.parse(start);
-      startEpoch = DateTime.fromMillisecondsSinceEpoch(startEpoch).subtract(Duration(hours: (Generic.isDaylightSavings(DateTime.fromMillisecondsSinceEpoch(startEpoch)) ? 2 : 1))).millisecondsSinceEpoch;
-  
-      endEpoch = int.parse(end);
-      endEpoch = DateTime.fromMillisecondsSinceEpoch(endEpoch).subtract(Duration(hours: (Generic.isDaylightSavings(DateTime.fromMillisecondsSinceEpoch(endEpoch)) ? 2 : 1))).millisecondsSinceEpoch;
-  
-      location = loc;
-  
-      final regex = RegExp(r'\]([^(]+)\(');
-      final match = regex.firstMatch(rawTitle);
-  
-      if(match != null){
-        title = match.group(1)!
-            .replaceAll(']', '')
-            .replaceAll('(', '')
-            .replaceAll('\u0009', '')
-            .trim();
-      }
-      else{
-        // we couldnt find the real title
-        title = rawTitle;
-      }
-      
-      final regex2 = RegExp(r'\((.*?)\)');
-      final match2 = regex2.firstMatch(rawTitle);
+  // RÉGI API KONSTRUKTOR
+  CalendarEntry(String start, String end, String loc, String rawTitle, this.isExam) {
+    startEpoch = int.parse(start);
+    // JAVÍTVA: Töröltem az 'api.' előtagot a Generic elől
+    startEpoch = DateTime.fromMillisecondsSinceEpoch(startEpoch)
+        .subtract(Duration(hours: (Generic.isDaylightSavings(DateTime.fromMillisecondsSinceEpoch(startEpoch)) ? 2 : 1)))
+        .millisecondsSinceEpoch;
 
-      if(match2 != null){
-        subjectCode = match2.group(1)!.trim().replaceAll('(', '').replaceAll(')', '');
-      }
-      else{
-        subjectCode = AppStrings.getLanguagePack().api_noData_Universal;
-      }
+    endEpoch = int.parse(end);
+    endEpoch = DateTime.fromMillisecondsSinceEpoch(endEpoch)
+        .subtract(Duration(hours: (Generic.isDaylightSavings(DateTime.fromMillisecondsSinceEpoch(endEpoch)) ? 2 : 1)))
+        .millisecondsSinceEpoch;
 
-      var regex3 = RegExp(r'\([^)]+\)(?=\s*\([^)]+\)*$)'); //igen... egy jéghideg olyat kérünk
-      var match3 = regex3.firstMatch(rawTitle);
+    location = loc;
 
-      if(match3 != null){
-        teacher = match3.group(0)!.trim().replaceAll('(', '').replaceAll(')', '');
-      }
-      else{
-        regex3 = RegExp(r'(?<=Minden hét\s)\((.*?)\)');
-        match3 = regex3.firstMatch(rawTitle);
-        if(match3 != null){
-          teacher = match3.group(1)!.trim().replaceAll('(', '').replaceAll(')', '');
-        }
-        else{
-          teacher = AppStrings.getLanguagePack().api_noData_Universal;
-        }
-      }
-    }
-  
-    @override
-    String toString() {
-      return '$startEpoch\n$endEpoch\n$location\n$title\n$isExam\n$teacher\n$subjectCode';
-    }
-  
-    CalendarEntry fillWithExisting(String existing){
-      var data = existing.split('\n');
-      if(data.isEmpty || data.length < 7){
-        return this;
-      }
-      startEpoch = int.parse(data[0]);
-      endEpoch = int.parse(data[1]);
-      location = data[2];
-      title = data[3];
-      isExam = bool.parse(data[4]);
-      teacher = data[5];
-      subjectCode = data[6];
-      return this;
+    final regex = RegExp(r'\]([^(]+)\(');
+    final match = regex.firstMatch(rawTitle);
+    if (match != null) {
+      title = match.group(1)!.replaceAll(']', '').replaceAll('(', '').replaceAll('\u0009', '').trim();
+    } else {
+      title = rawTitle;
     }
 
-    bool isIdentical(CalendarEntry other){
-      if(this.title == other.title && this.subjectCode == other.subjectCode && this.location == other.location && this.teacher == other.teacher && this.isExam == other.isExam){
-        return true;
-      }
-      return false;
+    final regex2 = RegExp(r'\(.*?\)');
+    final match2 = regex2.firstMatch(rawTitle);
+    subjectCode = match2 != null ? match2.group(0)!.replaceAll('(', '').replaceAll(')', '') : "-";
+
+    var regex3 = RegExp(r'\(.*?\)(?=\s*\(.*?\)*$)');
+    var match3 = regex3.firstMatch(rawTitle);
+    if (match3 != null) {
+      teacher = match3.group(0)!.trim().replaceAll('(', '').replaceAll(')', '');
+    } else {
+      teacher = "-";
     }
   }
+
+  // ÚJ: MODERN API KONSTRUKTOR
+  CalendarEntry.fromModern({
+    required this.startEpoch,
+    required this.endEpoch,
+    required this.location,
+    required this.title,
+    required this.isExam,
+    required this.subjectCode,
+    required this.teacher,
+  });
+
+  @override
+  String toString() {
+    return '$startEpoch\n$endEpoch\n$location\n$title\n$isExam\n$teacher\n$subjectCode';
+  }
+
+  CalendarEntry fillWithExisting(String existing) {
+    var data = existing.split('\n');
+    if (data.isEmpty || data.length < 7) return this;
+    startEpoch = int.parse(data[0]);
+    endEpoch = int.parse(data[1]);
+    location = data[2];
+    title = data[3];
+    isExam = bool.parse(data[4]);
+    teacher = data[5];
+    subjectCode = data[6];
+    return this;
+  }
+}
+//
+
+
   
   class CashinEntry{
     late int ID;

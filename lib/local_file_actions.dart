@@ -18,13 +18,12 @@ class LocalFileActions{
   }
 
   static Future<String?> openFilePicker(String dialogTitle)async{
-    final result = await FilePicker.platform.pickFiles(
+    final result = await FilePicker.pickFiles(
       dialogTitle: dialogTitle,
       initialDirectory: await _getDownloadsFolder(),
       type: FileType.custom,
-      allowedExtensions: ['.ics', '.ICS', 'ics', 'ICS'],
+      allowedExtensions: ['ics', 'ICS'],
       allowMultiple: false,
-      allowCompression: false,
     );
     return result?.xFiles[0].path;
   }

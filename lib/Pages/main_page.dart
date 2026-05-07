@@ -191,7 +191,8 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin{
     if(Platform.isAndroid){
       Future.delayed(Duration.zero, ()async{
         tz.initializeTimeZones();
-        final String timeZone = await FlutterTimezone.getLocalTimezone();
+        final timeZoneInfo = await FlutterTimezone.getLocalTimezone();
+        final String timeZone = timeZoneInfo.identifier;
         tz.setLocalLocation(tz.getLocation(timeZone));
       });
     }

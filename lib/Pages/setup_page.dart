@@ -266,7 +266,7 @@ class _SetupPageLoginTypeSelectionState extends State<SetupPageLoginTypeSelectio
                       ],
                     ),
                     const SizedBox(height: 10),
-                    Row(
+                    /*Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       mainAxisSize: MainAxisSize.max,
                       children: [
@@ -295,7 +295,8 @@ class _SetupPageLoginTypeSelectionState extends State<SetupPageLoginTypeSelectio
                         ),
                       ],
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 10),*/
+                  /* ICS BUTTON
                     GestureDetector(
                       onTap: (){
                         AppHaptics.lightImpact();
@@ -356,7 +357,7 @@ class _SetupPageLoginTypeSelectionState extends State<SetupPageLoginTypeSelectio
                           ],
                         ),
                       ),
-                    ),
+                    ),*/
                     const SizedBox(height: 50),
                     Container(
                         margin: const EdgeInsets.all(20),
@@ -1115,7 +1116,32 @@ class _SetupPageURLInputState extends State<SetupPageURLInput>{
                             if(_warnTimer != null){
                               _warnTimer!.cancel();
                             }
-                            RegExp regex = RegExp(r'/hallgato/login\.aspx');
+                            RegExp oldRegex = RegExp(r'/hallgato/login\.aspx',caseSensitive: false);
+                            RegExp modernRegex = RegExp(r'uni-obuda\.hu/ujhallgato', caseSensitive: false);
+
+                            bool isOld = _rawNeptunURL.toLowerCase().contains(oldRegex);
+                            bool isModern = _rawNeptunURL.toLowerCase().contains(modernRegex);
+
+                            PageDTO.validatedURL = isOld || isModern;
+
+                            if(_rawNeptunURL.isEmpty){
+                              return;
+                            }
+
+                            if(isOld || isModern){
+                              setState(() {
+                                _canProceed = true;
+                              });
+                              return;
+                            }
+                            // --- ÚJ LOGIKA VÉGE ---
+
+                            _warnTimer = Timer(const Duration(seconds: 2),(){
+                              _showSnackbar(AppStrings.getLanguagePack().urlLogin_setupPage_InstituteNeptunUrlInvalid, 18);
+                              AppHaptics.attentionLightImpact();
+                            });
+
+                            /* OLD CODE
                             PageDTO.validatedURL = _rawNeptunURL.toLowerCase().contains(regex);
                             if(_rawNeptunURL.isEmpty){
                               return;
@@ -1130,7 +1156,7 @@ class _SetupPageURLInputState extends State<SetupPageURLInput>{
                             _warnTimer = Timer(const Duration(seconds: 2),(){
                               _showSnackbar(AppStrings.getLanguagePack().urlLogin_setupPage_InstituteNeptunUrlInvalid, 18);
                               AppHaptics.attentionLightImpact();
-                            });
+                            });*/
                           },
                         ),
                       ),
@@ -1336,8 +1362,14 @@ class _SetupPageLoginState extends State<SetupPageLogin>{
       if(PageDTO.customURL != null && PageDTO.customURL!.isNotEmpty){
         RegExp regex = RegExp(r'/hallgato/login\.aspx');
         var correctedURL = PageDTO.customURL!.trim().toLowerCase();
+
         if(correctedURL.contains(regex)){
           correctedURL = correctedURL.replaceAll(regex, '/hallgato/MobileService.svc');
+          PageDTO.customURL = correctedURL;
+        }
+        // ÚJ: Óbudai Egyetem linkjének megtisztítása
+        else if (correctedURL.contains("uni-obuda.hu/ujhallgato")) {
+          correctedURL = correctedURL.replaceAll(RegExp(r'/login/?$'), '');
           PageDTO.customURL = correctedURL;
         }
 

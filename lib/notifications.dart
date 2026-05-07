@@ -10,13 +10,14 @@ class AppNotifications{
     Counter();
     if(Platform.isAndroid){
       tz.initializeTimeZones();
-      final String timeZone = await FlutterTimezone.getLocalTimezone();
+      final timeZoneName = await FlutterTimezone.getLocalTimezone();
+      final String timeZone = timeZoneName.identifier;
       tz.setLocalLocation(tz.getLocation(timeZone));
 
       AndroidFlutterLocalNotificationsPlugin().requestExactAlarmsPermission();
       _localnotifs.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()?.requestNotificationsPermission();
     }
-    await _localnotifs.initialize(const InitializationSettings(
+    await _localnotifs.initialize(settings: const InitializationSettings(
         android: AndroidInitializationSettings('@mipmap/ic_launcher'),
         linux: LinuxInitializationSettings(
             defaultActionName: 'Dismiss'
@@ -37,7 +38,7 @@ class AppNotifications{
       if(item.id != id){
         continue;
       }
-      await _localnotifs.cancel(item.counter);
+      await _localnotifs.cancel(id: item.counter);
     }
   }
 
@@ -78,14 +79,12 @@ class AppNotifications{
     _scheduledNotifLinks.add(NotificationLink(id, counter));
     if(Platform.isAndroid){
       await _localnotifs.zonedSchedule(
-        counter,
-        title,
-        content,
-        _convert(time.year, time.month, time.day, time.hour, time.minute),
-        details,
-        //androidAllowWhileIdle: true,
+        id: counter,
+        title: title,
+        body: content,
+        scheduledDate: _convert(time.year, time.month, time.day, time.hour, time.minute),
+        notificationDetails: details,
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-        uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.wallClockTime,
       );
     }
   }
@@ -106,7 +105,12 @@ class AppNotifications{
         urgency: LinuxNotificationUrgency.normal,
       ),
     );
-    _localnotifs.show(Counter.getCount(), title, desc, details);
+    _localnotifs.show(
+      id: Counter.getCount(),
+      title: title,
+      body: desc,
+      notificationDetails: details,
+    );
   }
 }
 

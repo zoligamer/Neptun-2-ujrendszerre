@@ -1,5 +1,7 @@
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 Future<void> saveString(String key, String value) async {
   final SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -59,6 +61,7 @@ class DataCache{
     _username = '';
     _password = '';
     _instituteUrl = '';
+    _accessToken = '';
     _hasNetwork = false;
     _hasLogin = false;
     _hasCachedCalendar = false;
@@ -94,6 +97,7 @@ class DataCache{
   late String? _username = '';
   late String? _password = '';
   late String? _instituteUrl = '';
+  late String? _accessToken = ''; //new systems token query
   late bool _hasNetwork = false;
   late bool? _hasLogin = false;
   late bool? _hasCachedCalendar = false;
@@ -104,7 +108,19 @@ class DataCache{
   late bool? _hasCachedFirstWeekEpoch = false;
   late int? _firstweekOfSemesterEpoch = 0;
   late bool? _isDemoAccount = false;
-  
+
+  bool _isModernApi = false;
+
+  static bool getIsModernApi() {
+    return _instance._isModernApi;
+  }
+
+  static Future<void> setIsModernApi(bool value) async {
+    _instance._isModernApi = value;
+    await saveInt('IsModernApi', value ? 1 : 0);
+  }
+
+
   late bool? _persistentSetting_familyFriendlyLoadingComments = false;
   late bool? _persistentSetting_showExamNotifications = true;
   late bool? _persistentSetting_showClassNotifications = true;
@@ -138,8 +154,36 @@ class DataCache{
     int? tmp;
 
     _username = await getString('Username');
-    _password = await getString('Password');
     _instituteUrl = await getString('URL');
+
+    // --- 🔒 BIZTONSÁGOS JELSZÓ BETÖLTÉS ÉS MIGRÁCIÓ ---
+    _password = await _secureStorage.read(key: 'neptun_password');
+
+    // Ha a Secure Storage üres, de a régi SharedPrefs-ben van jelszó (pl. app frissítéskor)
+    if (_password == null) {
+      String? oldPassword = await getString('Password');
+      if (oldPassword != null && oldPassword.isNotEmpty) {
+        _password = oldPassword;
+        // Átmentjük a titkosított helyre
+        await _secureStorage.write(key: 'neptun_password', value: oldPassword);
+        // Itt opcionálisan törölhetnéd a régi jelszót, ha van rá függvényed pl: clearString('Password');
+      }
+    }
+
+    // --- 🔒 BIZTONSÁGOS TOKEN BETÖLTÉS ÉS MIGRÁCIÓ ---
+    _accessToken = await _secureStorage.read(key: 'neptun_jwt_token');
+
+    if (_accessToken == null) {
+      String? oldToken = await getString('AccessToken');
+      if (oldToken != null && oldToken.isNotEmpty) {
+        _accessToken = oldToken;
+        await _secureStorage.write(key: 'neptun_jwt_token', value: oldToken);
+      }
+    }
+
+    // --- MODERN API (Óbudai / Új Neptun) JELZŐ BETÖLTÉSE ---
+    tmp = await getInt('IsModernApi');
+    _isModernApi = tmp != null && tmp != 0; // Ezt a változót majd hozd létre az osztály tetején! (bool _isModernApi = false;)
 
     tmp = await getInt('HasLogin');
     _hasLogin = tmp != null && tmp != 0;
@@ -257,16 +301,69 @@ class DataCache{
     await saveString('Username', value.toString());
   }
 
-  static String? getPassword(){return _instance._password;}
-  static Future<void> setPassword(String? value) async{
-    _instance._password = value;
-    await saveString('Password', value.toString());
+  // A sima dolgoknak (pl. beállítások, isModernApi, stb.) marad a SharedPreferences
+  static SharedPreferences? _prefs;
+
+  // A kritikus dolgoknak (jelszó, token) létrehozzuk a Secure Storage-ot
+  static const _secureStorage = FlutterSecureStorage();
+  // PASSWORD HANDLING:
+
+
+
+// SZINKRON GETTER! Így a többi fájl nem fog pirosodni,
+  // mert azonnal a memóriából kapják meg az adatot.
+  static String? getPassword() {
+    return _instance._password;
+  }
+
+  // ASZINKRON SETTER (Ide mentjük el biztonságosan)
+  static Future<void> setPassword(String? password) async {
+    _instance._password = password; // Frissítjük a memóriában is
+
+    if (password == null) {
+      await _secureStorage.delete(key: 'neptun_password');
+    } else {
+      await _secureStorage.write(key: 'neptun_password', value: password);
+    }
   }
 
   static String? getInstituteUrl(){return _instance._instituteUrl;}
+
   static Future<void> setInstituteUrl(String? value) async{
     _instance._instituteUrl = value;
     await saveString('URL', value.toString());
+  }
+
+
+// ASZINKRON SETTER
+  static Future<void> setAccessToken(String? token) async {
+    _instance._accessToken = token; // Frissítjük a memóriában
+
+    if (token == null) {
+      await _secureStorage.delete(key: 'neptun_jwt_token');
+    } else {
+      await _secureStorage.write(key: 'neptun_jwt_token', value: token);
+    }
+  }
+/* OLD CODE
+  static Future<void> setAccessToken(String value) async{
+    _instance._accessToken = value; //update in memory .-.
+    await saveString('AccessToken', value ?? ''); //save to disk with segédfüggvény lol nem tudok angolul nyelvvizsgával
+  }
+*//* new code
+  static Future<String?> getAccessToken() async {
+    return await _secureStorage.read(key: 'neptun_jwt_token');
+  }*/
+/* OLD CODE*/
+  static String? getAccessToken() {
+    return _instance._accessToken;
+  }
+
+// --- SECURE DATA TÖRLÉSE (Kijelentkezéskor) ---
+  static Future<void> clearSecureData() async {
+    _instance._password = null;
+    _instance._accessToken = null;
+    await _secureStorage.deleteAll();
   }
 
   static bool getHasNetwork(){return _instance._hasNetwork;}

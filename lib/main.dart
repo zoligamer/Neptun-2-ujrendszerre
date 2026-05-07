@@ -66,8 +66,8 @@ class NeptunApp extends StatelessWidget with WidgetsBindingObserver {
       });
     }
     return MaterialApp(
-      key: navigatorKey,
-      title: 'Neptun 2',
+      navigatorKey: navigatorKey,
+      title: 'Neptun Mobile',
       theme: themeNotifier._themeData,
       home: const Splitter(),
     );
