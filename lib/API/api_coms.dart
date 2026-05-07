@@ -182,79 +182,98 @@ import '../storage.dart';
       }
       return newList;
     }
-    static Future<bool> validateLoginCredentials(Institute institute, String username, String password) async{
+    static Future<int> validateLoginCredentials(Institute institute, String username, String password) async{
       return validateLoginCredentialsUrl(institute.URL, username, password);
     }
     //
-    static Future<bool> validateLoginCredentialsUrl(String rawUrl, String username, String password) async {
+// --- 2FA TÁMOGATÁSSAL ---
+    static Future<int> validateLoginCredentialsUrl(String rawUrl, String username, String password) async {
       if(username == 'DEMO' && password == 'DEMO'){
         await storage.DataCache.setIsDemoAccount(1);
-        return true;
-      }
-      else if(storage.DataCache.getHasICSFile() ?? false){ // <-- EZ IS ÚJ (kell az offline módhoz)
-        return true;
+        return 1;
       }
 
-      // 1. ELŐKÉSZÍTÉS: Levágjuk a felesleges perjelet a végéről, ha van
       String url = rawUrl.trim();
       if (url.endsWith('/')) url = url.substring(0, url.length - 1);
-
-      // Eltároljuk, hogy az eredeti linkben volt-e aspx
       bool containsAspx = url.toLowerCase().contains('.aspx');
 
-      // 2. TISZTÍTÁS: Levágjuk a login.aspx-et vagy MobileService.svc-t, hogy megkapjuk az ALAP linket
       String baseUrl = url.replaceAll(RegExp(r'/login(\.aspx)?$', caseSensitive: false), '');
       baseUrl = baseUrl.replaceAll(RegExp(r'/MobileService\.svc$', caseSensitive: false), '');
 
-      // --- ÚJ: ÓBUDAI LISTÁS LINK JAVÍTÁSA ---
-      // Ha a beépített listából választod ki, ez átirányít az új API-ra!
       if (baseUrl.toLowerCase().contains('uni-obuda.hu/hallgato')) {
         baseUrl = baseUrl.replaceAll(RegExp(r'/hallgato', caseSensitive: false), '/ujhallgato');
       }
 
-      // --- LOGIKAI KAPU ---
       if (containsAspx) {
-        // HA VAN ASPX -> RÉGI RENDSZER PRÓBA ELŐSZÖR
+        // Réginél nincs 2FA, ott marad a bool -> int konverzió
         bool success = await _tryOldLogin(baseUrl, username, password);
-        if (success) return true;
-        // Ha a régi nem ment, végső mentőövnek megpróbáljuk az újat is
-        return await _tryModernLogin(baseUrl, username, password);
+        return success ? 1 : 0;
       } else {
-        // HA NINCS ASPX -> ÚJ RENDSZER PRÓBA ELŐSZÖR
-        bool success = await _tryModernLogin(baseUrl, username, password);
-        if (success) return true;
-        // Ha az új nem ment, hátha mégis régi (csak nem írta ki az aspx-et)
-        return await _tryOldLogin(baseUrl, username, password);
+        return await _tryModernLogin(baseUrl, username, password);
       }
     }
 
-    // --- SEGÉDFÜGGVÉNY: ÚJ MODEREN LOGIN ---
-    static Future<bool> _tryModernLogin(String baseUrl, String username, String password) async {
+    static Future<int> _tryModernLogin(String baseUrl, String username, String password) async {
       try {
         final modernApiUrl = Uri.parse("$baseUrl/api/Account/Authenticate");
         final body = conv.jsonEncode({
-          "userName": username,
-          "password": password,
-          "captcha": "",
-          "captchaIdentifier": "",
-          "token": "",
-          "LCID": 1038
+          "userName": username, "password": password,
+          "captcha": "", "captchaIdentifier": "", "token": "", "LCID": 1038
         });
 
         final responseRaw = await _APIRequest.postRequest(modernApiUrl, body);
-        if (responseRaw.trim().startsWith('{')) {
-          final response = conv.jsonDecode(responseRaw);
-          if (response["data"] != null && response["data"]["accessToken"] != null) {
-            await storage.DataCache.setAccessToken(response["data"]["accessToken"]);
-            await storage.DataCache.setIsModernApi(true);
-            await storage.DataCache.setInstituteUrl(baseUrl);
-            return true;
-          }
+        final response = conv.jsonDecode(responseRaw);
+
+        // 2FA ELLENŐRZÉS
+        if (response["data"] != null && response["data"]["requiresTwoFactor"] == true) {
+          await storage.DataCache.setInstituteUrl(baseUrl);
+          await storage.DataCache.setAccessToken(response["data"]["twoFactorLoginToken"]);
+          return 2; // 2FA KELL
+        }
+
+        if (response["data"] != null && response["data"]["accessToken"] != null) {
+          await storage.DataCache.setAccessToken(response["data"]["accessToken"]);
+          await storage.DataCache.setIsModernApi(true);
+          await storage.DataCache.setInstituteUrl(baseUrl);
+          return 1; // SIKER
+        }
+      } catch (e) { }
+      return 0; // HIBA
+    }
+
+    // ÚJ FÜGGVÉNY A 2FA KÓDHOZ
+    static Future<bool> submitTwoFactorCode(String code) async {
+      try {
+        String baseUrl = storage.DataCache.getInstituteUrl() ?? '';
+        String? tempToken = await storage.DataCache.getAccessToken();
+
+        final url = Uri.parse("$baseUrl/api/Account/TwoFactorAuthenticate");
+        final body = conv.jsonEncode({
+          "twoFactorCode": code,
+          "twoFactorLoginToken": tempToken,
+          "rememberDevice": true
+        });
+
+        final responseRaw = await _APIRequest.postRequest(url, body);
+        final response = conv.jsonDecode(responseRaw);
+
+        if (response["data"] != null && response["data"]["accessToken"] != null) {
+          await storage.DataCache.setAccessToken(response["data"]["accessToken"]);
+          await storage.DataCache.setIsModernApi(true);
+          return true;
         }
       } catch (e) { }
       return false;
     }
 
+    // NAPTÁR IDŐ FIX (+10 perc dupla óráknál)
+    //
+    /*
+    final durationMinutes = (eventEndEpoch - eventStartEpoch) / 1000 / 60;
+    if (durationMinutes > 60) {
+        eventEndEpoch += 600000; // +10 perc
+    }
+  */
     // --- SEGÉDFÜGGVÉNY: RÉGI LOGIN ---
     static Future<bool> _tryOldLogin(String baseUrl, String username, String password) async {
       try {
@@ -275,67 +294,6 @@ import '../storage.dart';
       } catch (e) { }
       return false;
     }
-
-    //
-
-    /* STABLE
-    static Future<bool> validateLoginCredentialsUrl(String url, String username, String password)async{
-      if(username == 'DEMO' && password == 'DEMO'){
-        await storage.DataCache.setIsDemoAccount(1);
-        /*AppAnalitics.sendAnaliticsData(AppAnalitics.INFO, 'api_coms.dart => InstitudesRequest.validateLoginCredentials() Info: Login on demo account');*/
-        return true;
-      }
-
-      else if(storage.DataCache.getHasICSFile() ?? false){
-        return true;
-      }
-      //new:obudai uni (modern sso) handling
-      else if(url.contains("uni-obuda.hu")){
-        try {
-          final authUrl= Uri.parse("https://neptun.uni-obuda.hu/ujhallgato/api/Account/Authenticate");
-
-          final body = conv.jsonEncode({
-            "userName": username,
-            "password":password,
-            "captcha":"",
-            "captchaIdentifier":"",
-            "token":"",
-            "LCID":1038
-          });
-
-          //call new postRequest method
-          final responseRaw = await _APIRequest.postRequest(authUrl, body);
-          final response = conv.jsonDecode(responseRaw);
-
-          if (response["data"] != null && response["data"]["accessToken"] != null) {
-            //Success! Save the JWT token to storage.
-            final token = response["data"]["accessToken"];
-            await storage.DataCache.setAccessToken(token);
-            return true;
-          }
-          return false;
-        } catch (e) {
-          AppAnalitics.sendAnaliticsData(AppAnalitics.ERROR, 'api_coms.dart => ÓE Login Error: $e');
-          return false;
-        }
-      }
-      else {
-        final request = await _APIRequest.postRequest(
-          Uri.parse(url + URLs.TRAININGS_URL),
-          _APIRequest.getGenericPostData(username, password)
-        );
-        if (conv.json.decode(request)["ErrorMessage"] != null) {
-          AppAnalitics.sendAnaliticsData(AppAnalitics.ERROR, 'api_coms.dart => NeptunError: ${conv.json.decode(request)["ErrorMessage"]}');
-        }
-        return conv.json.decode(request)["ErrorMessage"] == null;
-      }
-      //old code... ^gone here lol
-      // final request = await _APIRequest.postRequest(Uri.parse(url + URLs.TRAININGS_URL), _APIRequest.getGenericPostData(username, password));
-      // if(conv.json.decode(request)["ErrorMessage"] != null){
-      //   AppAnalitics.sendAnaliticsData(AppAnalitics.ERROR, 'api_coms.dart => InstitudesRequest.validateLoginCredentials() NeptunError: ${conv.json.decode(request)["ErrorMessage"]}');
-      // }
-      // return conv.json.decode(request)["ErrorMessage"] == null;
-    }*/
 
     static Future<int?> getFirstStudyweek() async{
       final periods = await PeriodsRequest.getPeriods();
@@ -387,7 +345,12 @@ import '../storage.dart';
 
     static String? _cachedTrainingId;
 
-    static Future<String?> getStudentTrainingId() async {
+    static Future<String?> getStudentTrainingId({bool forceRefresh = false}) async {
+      // ÚJ LOGIKA: Ha a forceRefresh igaz, letöröljük a memóriát, hogy újra letöltse!
+      if (forceRefresh) {
+        _cachedTrainingId = null;
+      }
+
       if (_cachedTrainingId != null) return _cachedTrainingId;
       if (!(storage.DataCache.getIsModernApi() ?? false)) return null;
 
@@ -495,9 +458,6 @@ import '../storage.dart';
 
       if (storage.DataCache.getIsModernApi() ?? false) {
         try {
-          final trainingId = await getStudentTrainingId();
-          if (trainingId == null) return '{"calendarData": []}';
-
           final oldPayload = conv.json.decode(calendarJson);
           final startDateRaw = (oldPayload['startDate'] ?? oldPayload['StartDate']).toString();
           final endDateRaw = (oldPayload['endDate'] ?? oldPayload['EndDate']).toString();
@@ -509,20 +469,67 @@ import '../storage.dart';
           final startIso = DateTime.fromMillisecondsSinceEpoch(startEpoch).toIso8601String();
           final endIso = DateTime.fromMillisecondsSinceEpoch(endEpoch).toIso8601String();
 
-          final token = await storage.DataCache.getAccessToken();
           String baseUrl = storage.DataCache.getInstituteUrl() ?? '';
+          String responseRaw = "";
+          bool needsReAuth = false;
 
-          final url = Uri.parse("$baseUrl/api/Calendar/GetCalendarEvents?startDate=$startIso&endDate=$endIso&studentTrainingIds[0]=$trainingId&displayClasses=true&displayExams=true&displayOnlineMeetings=true&displayOtherEvents=true&displayPeriods=true&displayTasks=true");
+          // ==========================================
+          // 1. PRÓBA: Meglévő adatokkal (Szerverbarát)
+          // ==========================================
+          try {
+            final trainingId = await getStudentTrainingId(forceRefresh: false);
+            if (trainingId != null) {
+              final token = await storage.DataCache.getAccessToken();
+              final url = Uri.parse("$baseUrl/api/Calendar/GetCalendarEvents?startDate=$startIso&endDate=$endIso&studentTrainingIds[0]=$trainingId&displayClasses=true&displayExams=true&displayOnlineMeetings=true&displayOtherEvents=true&displayPeriods=true&displayTasks=true");
 
-          final responseRaw = await _APIRequest.getRequest(url, bearerToken: token!);
+              responseRaw = await _APIRequest.getRequest(url, bearerToken: token!);
+
+              // Megnézzük, hogy a válaszban nincs-e 401-es vagy 410-es hiba
+              if (responseRaw.contains('"statusCode":410') || responseRaw.contains('Authorization has been denied') || responseRaw.contains('"statusCode": 401')) {
+                needsReAuth = true;
+              }
+            } else {
+              needsReAuth = true;
+            }
+          } catch (e) {
+            // Ha a getRequest kivételt dobott a hiba miatt, akkor is újra kell próbálni
+            needsReAuth = true;
+          }
+
+          // ==========================================
+          // 2. PRÓBA: Csak ha kidobott minket a Neptun!
+          // ==========================================
+          if (needsReAuth) {
+            debug.log("Naptár: Lejárt token/ID érzékelve. Újra-azonosítás indul...");
+
+            final username = storage.DataCache.getUsername()!;
+            final password = storage.DataCache.getPassword()!;
+            await InstitutesRequest.validateLoginCredentialsUrl(baseUrl, username, password);
+
+            // Itt már a forceRefresh: true-t használjuk!
+            final newTrainingId = await getStudentTrainingId(forceRefresh: true);
+            if (newTrainingId == null) return '{"calendarData": []}';
+
+            final newToken = await storage.DataCache.getAccessToken();
+            final retryUrl = Uri.parse("$baseUrl/api/Calendar/GetCalendarEvents?startDate=$startIso&endDate=$endIso&studentTrainingIds[0]=$newTrainingId&displayClasses=true&displayExams=true&displayOnlineMeetings=true&displayOtherEvents=true&displayPeriods=true&displayTasks=true");
+
+            responseRaw = await _APIRequest.getRequest(retryUrl, bearerToken: newToken!);
+          }
+
+          // ==========================================
+          // ADATOK FELDOLGOZÁSA
+          // ==========================================
           final newApiData = conv.json.decode(responseRaw);
-
           List<Map<String, dynamic>> mappedList = [];
+
           if (newApiData['data'] != null) {
             for (var event in newApiData['data']) {
+              final eventStartEpoch = DateTime.parse(event['startDate']).millisecondsSinceEpoch;
+              final eventEndEpoch = DateTime.parse(event['endDate']).millisecondsSinceEpoch;
+
               mappedList.add({
-                'start_ms': DateTime.parse(event['startDate']).millisecondsSinceEpoch,
-                'end_ms': DateTime.parse(event['endDate']).millisecondsSinceEpoch,
+                'start_ms': eventStartEpoch,
+                'end_ms': eventEndEpoch,
                 'location': event['rooms'] ?? 'Nincs terem',
                 'title': event['name'] ?? 'Ismeretlen',
                 'type': event['eventTypeId'] == 1 ? 1 : 0,
@@ -532,7 +539,9 @@ import '../storage.dart';
             }
           }
           return conv.jsonEncode({"calendarData": mappedList});
+
         } catch (e) {
+          debug.log("Naptár lekérési hiba: $e");
           return '{"calendarData": []}';
         }
       } else {
@@ -1693,20 +1702,27 @@ class CalendarEntry {
     NeptunCerts(){
       _instance = this;
     }
-  
     @override
     HttpClient createHttpClient(SecurityContext? context) {
       return super.createHttpClient(context)
         ..badCertificateCallback = (X509Certificate cert, String host, int port) {
-          final validCertSha1 = [165, 169, 244, 23, 233, 182, 23, 197, 14, 55, 39, 250, 69, 216, 89, 8, 179, 251, 103, 19];
-          //debug.log(cert.sha1.toString());
-          //debug.log(validCertSha1.toString());
-          hasValidCertificate = cert.sha1.toString() == validCertSha1.toString(); // list comparison doesnt always work for some reason...
-          if(!hasValidCertificate){
-            AppAnalitics.sendAnaliticsData(AppAnalitics.ERROR, 'api_coms.dart => NeptunCerts.createHttpClient() Error: app found an invalid cert');
-            AppAnalitics.sendAnaliticsData(AppAnalitics.INFO, 'api_coms.dart => NeptunCerts.createHttpClient() CERT: "' + cert.sha1.toString() + '" Needed: "' + validCertSha1.toString() + '"');
-          }
-          return hasValidCertificate;
+          // Ignoráljuk a tanúsítvány hibákat (Minden magyar egyetemet beengedünk)
+          return true;
         };
     }
+    // @override
+    // HttpClient createHttpClient(SecurityContext? context) {
+    //   return super.createHttpClient(context)
+    //     ..badCertificateCallback = (X509Certificate cert, String host, int port) {
+    //       final validCertSha1 = [165, 169, 244, 23, 233, 182, 23, 197, 14, 55, 39, 250, 69, 216, 89, 8, 179, 251, 103, 19];
+    //       //debug.log(cert.sha1.toString());
+    //       //debug.log(validCertSha1.toString());
+    //       hasValidCertificate = cert.sha1.toString() == validCertSha1.toString(); // list comparison doesnt always work for some reason...
+    //       if(!hasValidCertificate){
+    //         AppAnalitics.sendAnaliticsData(AppAnalitics.ERROR, 'api_coms.dart => NeptunCerts.createHttpClient() Error: app found an invalid cert');
+    //         AppAnalitics.sendAnaliticsData(AppAnalitics.INFO, 'api_coms.dart => NeptunCerts.createHttpClient() CERT: "' + cert.sha1.toString() + '" Needed: "' + validCertSha1.toString() + '"');
+    //       }
+    //       return hasValidCertificate;
+    //     };
+    // }
   }

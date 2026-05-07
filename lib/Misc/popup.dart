@@ -2246,6 +2246,29 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
           ),
         ));
         return list;
+      case 9: // 2FA Mód
+        list.add(Text("Kétlépcsős azonosítás", style: TextStyle(color: AppColors.getTheme().textColor, fontSize: 22, fontWeight: FontWeight.bold)));
+        list.add(const SizedBox(height: 10));
+        list.add(Text("Add meg a(z) Hitelesítő alkalmazásban generált 6 jegyű kódot!", textAlign: TextAlign.center, style: TextStyle(color: AppColors.getTheme().textColor.withOpacity(0.7))));
+        list.add(const SizedBox(height: 25));
+        list.add(TextField(
+          autofocus: true,
+          keyboardType: TextInputType.number,
+          maxLength: 6,
+          textAlign: TextAlign.center,
+          style: TextStyle(color: AppColors.getTheme().textColor, fontSize: 28, letterSpacing: 8, fontWeight: FontWeight.bold),
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: AppColors.getTheme().textColor.withOpacity(0.05),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none),
+          ),
+          onChanged: (val) {
+            if (val.length == 6) {
+              PopupWidgetHandler._instance!.callback(val); // Amint beírta a 6. számot, visszaküldi a loginnak!
+            }
+          },
+        ));
+        return list;
       default:
         list.add(EmojiRichText(
           text: AppStrings.getLanguagePack().popup_caseDefault_InvalidPopupState,

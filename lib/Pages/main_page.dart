@@ -427,10 +427,35 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin{
       final url = storage.DataCache.getInstituteUrl()!;
 
       final result = await api.InstitutesRequest.validateLoginCredentialsUrl(url, username, password);
-      if(result){
+
+      if(result == 1){
+        // Siker: A munkamenet még mindig érvényes
+        return;
+      }
+      else if(result == 2){
+        // 2FA szükséges: Lejárt a token, a Neptun újra kéri a 6 jegyű kódot
+        PopupWidgetHandler(
+            mode: 9,
+            callback: (kod) async {
+              // JAVÍTVA: Hozzáadva az InstitutesRequest és a .toString()
+              bool isOk = await api.InstitutesRequest.submitTwoFactorCode(kod.toString());
+              if (isOk) {
+                PopupWidgetHandler.closePopup(context);
+                return; // Sikerült megújítani a munkamenetet!
+              } else {
+                PopupWidgetHandler.closePopup(context);
+                userUnavailableAccountLogout(); // Rossz 2FA kód -> kijelentkeztetés
+              }
+            },
+            onCloseCallback: (){
+              userUnavailableAccountLogout(); // Ha bezárja (X-eli) a 2FA ablakot -> kijelentkeztetés
+            }
+        );
+        PopupWidgetHandler.doPopup(context);
         return;
       }
 
+      // 0-ás eset: Hibás jelszó / fiók letiltva / jelszó megváltozott
       PopupWidgetHandler(mode: 6, callback: (_){
         userUnavailableAccountLogout();
       }, onCloseCallback: (){

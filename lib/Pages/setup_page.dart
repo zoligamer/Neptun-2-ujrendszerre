@@ -22,6 +22,7 @@ import '../app_update.dart';
 import '../storage.dart' as storage;
 import '../storage.dart';
 import 'main_page.dart' as main_page;
+import '../Misc/popup.dart';
 
 class SetupPageLoginTypeSelection extends StatefulWidget{
   const SetupPageLoginTypeSelection({super.key});
@@ -1406,7 +1407,7 @@ class _SetupPageLoginState extends State<SetupPageLogin>{
     AppAnalitics.sendAnaliticsData(AppAnalitics.INFO, 'api_coms.dart => SetupPageLogin.finishLogin() Info: Login: ${selected.Name} - ${selected.URL}');
     api.InstitutesRequest.validateLoginCredentials(selected, _username.toUpperCase(), _password).then((value)
     {
-      if(value){ // logged in
+      if(value == 1){ // 1: SIKERES BELÉPÉS
         storage.DataCache.setUsername(_username.toUpperCase());
         storage.DataCache.setPassword(_password);
         storage.DataCache.setInstituteUrl(selected.URL);
@@ -1419,14 +1420,50 @@ class _SetupPageLoginState extends State<SetupPageLogin>{
         );
         return;
       }
-      AppHaptics.attentionLightImpact();
-      setState(() {
-        _paintRed = true;
-        _canProceed = true;
-        //_canGoBack = true;
-        _isLoading = false;
-        _showNeptunServerError = false;
-      });
+      else if(value == 2){ // 2: 2FA SZÜKSÉGES
+        PopupWidgetHandler(
+            mode: 9,
+            callback: (kod) async {
+              // JAVÍTVA: Hozzáadva az InstitutesRequest és a .toString()
+              bool isOk = await api.InstitutesRequest.submitTwoFactorCode(kod.toString());
+
+              if (isOk) {
+                PopupWidgetHandler.closePopup(context);
+
+                // Mivel jó a kód, elmentjük az adatokat és beléptetjük
+                storage.DataCache.setUsername(_username.toUpperCase());
+                storage.DataCache.setPassword(_password);
+                storage.DataCache.setInstituteUrl(selected.URL);
+                storage.DataCache.setHasLogin(1);
+
+                Navigator.popUntil(context, (route) => route.willHandlePopInternally);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const main_page.HomePage()),
+                );
+              } else {
+                // Rossz 2FA kód esetén pirosra festjük a beviteli mezőket
+                setState(() {
+                  _paintRed = true;
+                  _canProceed = true;
+                  _isLoading = false;
+                  _showNeptunServerError = false;
+                });
+              }
+            }
+        );
+        PopupWidgetHandler.doPopup(context);
+        return;
+      }
+      else { // 0: HIBÁS JELSZÓ VAGY NEPTUN KÓD
+        AppHaptics.attentionLightImpact();
+        setState(() {
+          _paintRed = true;
+          _canProceed = true;
+          _isLoading = false;
+          _showNeptunServerError = false;
+        });
+      }
     });
   }
 
