@@ -105,8 +105,8 @@ class BottomNavigatorWidget extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 4),
       decoration: BoxDecoration(
           color: homePage.currentView == index
-              ? AppColors.getTheme().textColor.withOpacity(.15)
-              : AppColors.getTheme().textColor.withOpacity(.05),
+              ? AppColors.getTheme().textColor.withValues(alpha: .15)
+              : AppColors.getTheme().textColor.withValues(alpha: .05),
           borderRadius: const BorderRadius.only(topLeft: Radius.circular(16), topRight: Radius.circular(12), bottomRight: Radius.circular(16), bottomLeft: Radius.circular(12)),
           border: Border.all(
             width: 1,
@@ -128,7 +128,7 @@ class BottomNavigatorWidget extends StatelessWidget {
           homePage.currentView == index ? filledIcon : outlinedIcon,
           color: homePage.currentView == index ?
           AppColors.getTheme().onPrimaryContainer :
-          AppColors.getTheme().onPrimaryContainer.withOpacity(.3),
+          AppColors.getTheme().onPrimaryContainer.withValues(alpha: .3),
           size: 28,
         ),
       ),

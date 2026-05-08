@@ -94,7 +94,7 @@ class _SplitterState extends State<Splitter>{
               api.Generic.randomLoadingComment(DataCache.getNeedFamilyFriendlyComments()!),
               textAlign: TextAlign.center,
               style: TextStyle(
-                  color: AppColors.getTheme().textColor.withOpacity(.2),
+                  color: AppColors.getTheme().textColor.withValues(alpha: .2),
                   fontWeight: FontWeight.w300,
                   fontSize: 10
               ),

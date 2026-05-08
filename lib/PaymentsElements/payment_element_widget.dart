@@ -79,7 +79,7 @@ class PaymentElementWidget extends StatelessWidget{
                     Text(
                       dueDate.year.toString(),
                       style: TextStyle(
-                        color: AppColors.getTheme().textColor.withOpacity(0.7),
+                        color: AppColors.getTheme().textColor.withValues(alpha: 0.7),
                         fontWeight: FontWeight.w400,
                         fontSize: 12.0,
                       ),
@@ -102,7 +102,7 @@ class PaymentElementWidget extends StatelessWidget{
           !isNonTimed ? Text(
             isMissed ? AppStrings.getStringWithParams(AppStrings.getLanguagePack().paymentPage_PaymentMissedTime, [-(Duration(milliseconds: dueDateMs - nowMs).inDays + 1)]) : AppStrings.getStringWithParams(AppStrings.getLanguagePack().paymentPage_PaymentDeadlineTime, [Duration(milliseconds: dueDateMs - nowMs).inDays + 1]),
             style: TextStyle(
-              color: AppColors.getTheme().textColor.withOpacity(0.5),
+              color: AppColors.getTheme().textColor.withValues(alpha: 0.5),
               fontWeight: FontWeight.w600,
               fontSize: 12,
             ),

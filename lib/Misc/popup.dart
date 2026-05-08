@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'dart:developer';
+//import 'dart:developer';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -225,7 +225,7 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
         ));
         list.add(const SizedBox(height: 3));
         list.add(Container(
-          color: AppColors.getTheme().textColor.withOpacity(0.3),
+          color: AppColors.getTheme().textColor.withValues(alpha: 0.3),
           margin: const EdgeInsets.symmetric(vertical: 10),
           height: 2,
         ));
@@ -234,7 +234,7 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
           list.add(Text(
             AppStrings.getLanguagePack().popup_case0_SelectGrade,
             style: TextStyle(
-                color: AppColors.getTheme().textColor.withOpacity(.7),
+                color: AppColors.getTheme().textColor.withValues(alpha: .7),
                 fontSize: 15,
                 fontWeight: FontWeight.w400
             ),
@@ -265,7 +265,7 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
                     icon: Text(
                       '1',
                       style: TextStyle(
-                        color: selectionValue == -1 || selectionValue == 0 ? AppColors.getTheme().grade1 : AppColors.getTheme().grade1.withOpacity(.4),
+                        color: selectionValue == -1 || selectionValue == 0 ? AppColors.getTheme().grade1 : AppColors.getTheme().grade1.withValues(alpha: .4),
                         fontSize: 30,
                         fontWeight: selectionValue != -1 && selectionValue == 0 ? FontWeight.w800 : FontWeight.normal
                       ),
@@ -287,7 +287,7 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
                     icon: Text(
                       '2',
                       style: TextStyle(
-                          color: selectionValue == -1 || selectionValue == 1 ? AppColors.getTheme().grade2 : AppColors.getTheme().grade2.withOpacity(.4),
+                          color: selectionValue == -1 || selectionValue == 1 ? AppColors.getTheme().grade2 : AppColors.getTheme().grade2.withValues(alpha: .4),
                           fontSize: 30,
                           fontWeight: selectionValue != -1 && selectionValue == 1 ? FontWeight.w800 : FontWeight.normal
                       ),
@@ -309,7 +309,7 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
                     icon: Text(
                       '3',
                       style: TextStyle(
-                          color: selectionValue == -1 || selectionValue == 2 ? AppColors.getTheme().grade3 : AppColors.getTheme().grade3.withOpacity(.4),
+                          color: selectionValue == -1 || selectionValue == 2 ? AppColors.getTheme().grade3 : AppColors.getTheme().grade3.withValues(alpha: .4),
                           fontSize: 30,
                           fontWeight: selectionValue != -1 && selectionValue == 2 ? FontWeight.w800 : FontWeight.normal
                       ),
@@ -331,7 +331,7 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
                     icon: Text(
                       '4',
                       style: TextStyle(
-                          color: selectionValue == -1 || selectionValue == 3 ? AppColors.getTheme().grade4 : AppColors.getTheme().grade4.withOpacity(.4),
+                          color: selectionValue == -1 || selectionValue == 3 ? AppColors.getTheme().grade4 : AppColors.getTheme().grade4.withValues(alpha: .4),
                           fontSize: 30,
                           fontWeight: selectionValue != -1 && selectionValue == 3 ? FontWeight.w800 : FontWeight.normal
                       ),
@@ -353,7 +353,7 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
                     icon: Text(
                       '5',
                       style: TextStyle(
-                          color: selectionValue == -1 || selectionValue == 4 ? AppColors.getTheme().grade5 : AppColors.getTheme().grade5.withOpacity(.4),
+                          color: selectionValue == -1 || selectionValue == 4 ? AppColors.getTheme().grade5 : AppColors.getTheme().grade5.withValues(alpha: .4),
                           fontSize: 30,
                           fontWeight: selectionValue != -1 && selectionValue == 4 ? FontWeight.w800 : FontWeight.normal
                       ),
@@ -376,8 +376,8 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
             AppHaptics.lightImpact();
           },
           style: ButtonStyle(
-            backgroundColor: WidgetStateProperty.all(AppColors.getTheme().textColor.withOpacity(.1)),
-            overlayColor: WidgetStateProperty.all(AppColors.getTheme().textColor.withOpacity(.05)),
+            backgroundColor: WidgetStateProperty.all(AppColors.getTheme().textColor.withValues(alpha: .1)),
+            overlayColor: WidgetStateProperty.all(AppColors.getTheme().textColor.withValues(alpha: .05)),
           ),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 45, vertical: 15),
@@ -408,7 +408,7 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
         ));
         list.add(const SizedBox(height: 3));
         list.add(Container(
-          color: AppColors.getTheme().textColor.withOpacity(0.3),
+          color: AppColors.getTheme().textColor.withValues(alpha: 0.3),
           margin: const EdgeInsets.symmetric(vertical: 10),
           height: 2,
         ));
@@ -432,7 +432,7 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
             Container(
               decoration: BoxDecoration(
                   borderRadius: const BorderRadius.all(Radius.circular(90)),
-                  color: AppColors.getTheme().textColor.withOpacity(.06)
+                  color: AppColors.getTheme().textColor.withValues(alpha: .06)
               ),
               child: IconButton(
                 onPressed: (){
@@ -441,7 +441,7 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
                 },
                 icon: Icon(
                   Icons.question_mark_rounded,
-                  color: AppColors.getTheme().textColor.withOpacity(.4),
+                  color: AppColors.getTheme().textColor.withValues(alpha: .4),
                 ),
                 enableFeedback: true,
                 iconSize: 24,
@@ -456,9 +456,9 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
                   AppHaptics.lightImpact();
                   if(mounted) {setState((){});}
                 },
-                activeColor: AppColors.getTheme().secondary,
+                activeThumbColor: AppColors.getTheme().secondary,
                 activeTrackColor: AppColors.getTheme().onPrimaryContainer,
-                hoverColor: AppColors.getTheme().textColor.withOpacity(.1),
+                hoverColor: AppColors.getTheme().textColor.withValues(alpha: .1),
                 inactiveTrackColor: AppColors.getTheme().buttonDisabled,
                 inactiveThumbColor: AppColors.getTheme().textColor,
               ),
@@ -467,7 +467,7 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
         ));
         list.add(Container(
           height: 1,
-          color: AppColors.getTheme().textColor.withOpacity(.1),
+          color: AppColors.getTheme().textColor.withValues(alpha: .1),
         ));
         list.add(Row(
           mainAxisSize: MainAxisSize.max,
@@ -489,7 +489,7 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
             Container(
               decoration: BoxDecoration(
                 borderRadius: const BorderRadius.all(Radius.circular(90)),
-                color: AppColors.getTheme().textColor.withOpacity(.06)
+                color: AppColors.getTheme().textColor.withValues(alpha: .06)
               ),
               child: IconButton(
                 onPressed: (){
@@ -498,7 +498,7 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
                 },
                 icon: Icon(
                   Icons.question_mark_rounded,
-                  color: AppColors.getTheme().textColor.withOpacity(.4),
+                  color: AppColors.getTheme().textColor.withValues(alpha: .4),
                 ),
                 enableFeedback: true,
                 iconSize: 24,
@@ -519,9 +519,9 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
                   }
                   if(mounted) {setState((){});}
                 },
-                activeColor: AppColors.getTheme().secondary,
+                activeThumbColor: AppColors.getTheme().secondary,
                 activeTrackColor: AppColors.getTheme().onPrimaryContainer,
-                hoverColor: AppColors.getTheme().textColor.withOpacity(.1),
+                hoverColor: AppColors.getTheme().textColor.withValues(alpha: .1),
                 inactiveTrackColor: AppColors.getTheme().buttonDisabled,
                 inactiveThumbColor: AppColors.getTheme().textColor,
               ),
@@ -548,7 +548,7 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
             Container(
               decoration: BoxDecoration(
                   borderRadius: const BorderRadius.all(Radius.circular(90)),
-                  color: AppColors.getTheme().textColor.withOpacity(.06)
+                  color: AppColors.getTheme().textColor.withValues(alpha: .06)
               ),
               child: IconButton(
                 onPressed: (){
@@ -557,7 +557,7 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
                 },
                 icon: Icon(
                   Icons.question_mark_rounded,
-                  color: AppColors.getTheme().textColor.withOpacity(.4),
+                  color: AppColors.getTheme().textColor.withValues(alpha: .4),
                 ),
                 enableFeedback: true,
                 iconSize: 24,
@@ -578,9 +578,9 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
                   }
                   if(mounted) {setState((){});}
                 },
-                activeColor: AppColors.getTheme().secondary,
+                activeThumbColor: AppColors.getTheme().secondary,
                 activeTrackColor: AppColors.getTheme().onPrimaryContainer,
-                hoverColor: AppColors.getTheme().textColor.withOpacity(.1),
+                hoverColor: AppColors.getTheme().textColor.withValues(alpha: .1),
                 inactiveTrackColor: AppColors.getTheme().buttonDisabled,
                 inactiveThumbColor: AppColors.getTheme().textColor,
               ),
@@ -607,7 +607,7 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
             Container(
               decoration: BoxDecoration(
                   borderRadius: const BorderRadius.all(Radius.circular(90)),
-                  color: AppColors.getTheme().textColor.withOpacity(.06)
+                  color: AppColors.getTheme().textColor.withValues(alpha: .06)
               ),
               child: IconButton(
                 onPressed: (){
@@ -616,7 +616,7 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
                 },
                 icon: Icon(
                   Icons.question_mark_rounded,
-                  color: AppColors.getTheme().textColor.withOpacity(.4),
+                  color: AppColors.getTheme().textColor.withValues(alpha: .4),
                 ),
                 enableFeedback: true,
                 iconSize: 24,
@@ -637,9 +637,9 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
                   }
                   if(mounted) {setState((){});}
                 },
-                activeColor: AppColors.getTheme().secondary,
+                activeThumbColor: AppColors.getTheme().secondary,
                 activeTrackColor: AppColors.getTheme().onPrimaryContainer,
-                hoverColor: AppColors.getTheme().textColor.withOpacity(.1),
+                hoverColor: AppColors.getTheme().textColor.withValues(alpha: .1),
                 inactiveTrackColor: AppColors.getTheme().buttonDisabled,
                 inactiveThumbColor: AppColors.getTheme().textColor,
               ),
@@ -666,7 +666,7 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
             Container(
               decoration: BoxDecoration(
                   borderRadius: const BorderRadius.all(Radius.circular(90)),
-                  color: AppColors.getTheme().textColor.withOpacity(.06)
+                  color: AppColors.getTheme().textColor.withValues(alpha: .06)
               ),
               child: IconButton(
                 onPressed: (){
@@ -675,7 +675,7 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
                 },
                 icon: Icon(
                   Icons.question_mark_rounded,
-                  color: AppColors.getTheme().textColor.withOpacity(.4),
+                  color: AppColors.getTheme().textColor.withValues(alpha: .4),
                 ),
                 enableFeedback: true,
                 iconSize: 24,
@@ -696,9 +696,9 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
                   }
                   if(mounted) {setState((){});}
                 },
-                activeColor: AppColors.getTheme().secondary,
+                activeThumbColor: AppColors.getTheme().secondary,
                 activeTrackColor: AppColors.getTheme().onPrimaryContainer,
-                hoverColor: AppColors.getTheme().textColor.withOpacity(.1),
+                hoverColor: AppColors.getTheme().textColor.withValues(alpha: .1),
                 inactiveTrackColor: AppColors.getTheme().buttonDisabled,
                 inactiveThumbColor: AppColors.getTheme().textColor,
               ),
@@ -707,7 +707,7 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
         ));
         list.add(Container(
           height: 1,
-          color: AppColors.getTheme().textColor.withOpacity(.1),
+          color: AppColors.getTheme().textColor.withValues(alpha: .1),
         ));
         list.add(Row(
           mainAxisSize: MainAxisSize.max,
@@ -729,7 +729,7 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
             Container(
               decoration: BoxDecoration(
                   borderRadius: const BorderRadius.all(Radius.circular(90)),
-                  color: AppColors.getTheme().textColor.withOpacity(.06)
+                  color: AppColors.getTheme().textColor.withValues(alpha: .06)
               ),
               child: IconButton(
                 onPressed: (){
@@ -738,7 +738,7 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
                 },
                 icon: Icon(
                   Icons.question_mark_rounded,
-                  color: AppColors.getTheme().textColor.withOpacity(.4),
+                  color: AppColors.getTheme().textColor.withValues(alpha: .4),
                 ),
                 enableFeedback: true,
                 iconSize: 24,
@@ -753,9 +753,9 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
                   AppHaptics.lightImpact();
                   if(mounted) {setState((){});}
                 },
-                activeColor: AppColors.getTheme().secondary,
+                activeThumbColor: AppColors.getTheme().secondary,
                 activeTrackColor: AppColors.getTheme().onPrimaryContainer,
-                hoverColor: AppColors.getTheme().textColor.withOpacity(.1),
+                hoverColor: AppColors.getTheme().textColor.withValues(alpha: .1),
                 inactiveTrackColor: AppColors.getTheme().buttonDisabled,
                 inactiveThumbColor: AppColors.getTheme().textColor,
               ),
@@ -782,7 +782,7 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
             Container(
               decoration: BoxDecoration(
                   borderRadius: const BorderRadius.all(Radius.circular(90)),
-                  color: Colors.white.withOpacity(.06)
+                  color: Colors.white.withValues(alpha: .06)
               ),
               child: IconButton(
                 onPressed: (){
@@ -790,7 +790,7 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
                 },
                 icon: Icon(
                   Icons.question_mark_rounded,
-                  color: Colors.white.withOpacity(.4),
+                  color: Colors.white.withValues(alpha: .4),
                 ),
                 enableFeedback: true,
                 iconSize: 24,
@@ -811,9 +811,9 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
                   }
                   if(mounted) {setState((){});}
                 },
-                activeColor: Colors.white,
+                activeThumbColor: Colors.white,
                 activeTrackColor: const Color.fromRGBO(0x4F, 0x69, 0x6E, 1.0),
-                hoverColor: Colors.white.withOpacity(.1),
+                hoverColor: Colors.white.withValues(alpha: .1),
               ),
             )
           ],
@@ -838,7 +838,7 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
             Container(
               decoration: BoxDecoration(
                   borderRadius: const BorderRadius.all(Radius.circular(90)),
-                  color: AppColors.getTheme().textColor.withOpacity(.06)
+                  color: AppColors.getTheme().textColor.withValues(alpha: .06)
               ),
               child: IconButton(
                 onPressed: (){
@@ -847,7 +847,7 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
                 },
                 icon: Icon(
                   Icons.question_mark_rounded,
-                  color: AppColors.getTheme().textColor.withOpacity(.4),
+                  color: AppColors.getTheme().textColor.withValues(alpha: .4),
                 ),
                 enableFeedback: true,
                 iconSize: 24,
@@ -860,7 +860,7 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
                 child: DropdownButtonFormField<String>(
                     key: _languageDropdownGlobalKey,
                     borderRadius: BorderRadius.circular(12),
-                    value: _languageCurrSelect, // The currently selected value.
+                    initialValue: _languageCurrSelect, // The currently selected value.
                     icon: const SizedBox(),
                     style: TextStyle(
                         color: AppColors.getTheme().textColor,
@@ -876,7 +876,7 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
                         suffixIcon: const Icon(Icons.arrow_drop_down_rounded),
                         labelStyle: TextStyle(
                             fontSize: 14,
-                            color: AppColors.getTheme().textColor.withOpacity(.6),
+                            color: AppColors.getTheme().textColor.withValues(alpha: .6),
                             fontWeight: FontWeight.w400
                         ),
                         border: const OutlineInputBorder(
@@ -884,7 +884,7 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
                             borderSide: BorderSide.none
                         ),
                         filled: true,
-                        fillColor: AppColors.getTheme().textColor.withOpacity(.05)
+                        fillColor: AppColors.getTheme().textColor.withValues(alpha: .05)
                     ),
                     items: AppStrings.getLanguageNamesWithFlag().map<DropdownMenuItem<String>>((String value) {
                       return DropdownMenuItem<String>(
@@ -1045,7 +1045,7 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
                 padding: const EdgeInsets.all(10),
                 margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(.05),
+                  color: Colors.white.withValues(alpha: .05),
                   borderRadius: const BorderRadius.all(Radius.circular(12)),
                 ),
                 child: Row(
@@ -1068,7 +1068,7 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
                     ),
                     Icon(
                       Icons.arrow_drop_down_rounded,
-                      color: Colors.white.withOpacity(.5),
+                      color: Colors.white.withValues(alpha: .5),
                     )
                   ],
                 )
@@ -1096,7 +1096,7 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
             Container(
               decoration: BoxDecoration(
                   borderRadius: const BorderRadius.all(Radius.circular(90)),
-                  color: AppColors.getTheme().textColor.withOpacity(.06)
+                  color: AppColors.getTheme().textColor.withValues(alpha: .06)
               ),
               child: IconButton(
                 onPressed: (){
@@ -1105,7 +1105,7 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
                 },
                 icon: Icon(
                   Icons.question_mark_rounded,
-                  color: AppColors.getTheme().textColor.withOpacity(.4),
+                  color: AppColors.getTheme().textColor.withValues(alpha: .4),
                 ),
                 enableFeedback: true,
                 iconSize: 24,
@@ -1118,7 +1118,7 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
                 child: DropdownButtonFormField<String>(
                     key: _themesDropdownGlobalKey,
                     borderRadius: BorderRadius.circular(12),
-                    value: _themesCurrSelect, // The currently selected value.
+                    initialValue: _themesCurrSelect, // The currently selected value.
                     icon: const SizedBox(),
                     style: TextStyle(
                         color: AppColors.getTheme().textColor,
@@ -1134,7 +1134,7 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
                         suffixIcon: const Icon(Icons.arrow_drop_down_rounded),
                         labelStyle: TextStyle(
                             fontSize: 14,
-                            color: AppColors.getTheme().textColor.withOpacity(.6),
+                            color: AppColors.getTheme().textColor.withValues(alpha: .6),
                             fontWeight: FontWeight.w400
                         ),
                         border: const OutlineInputBorder(
@@ -1142,7 +1142,7 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
                             borderSide: BorderSide.none
                         ),
                         filled: true,
-                        fillColor: AppColors.getTheme().textColor.withOpacity(.05)
+                        fillColor: AppColors.getTheme().textColor.withValues(alpha: .05)
                     ),
                     items: AppColors.getThemesOnline().map<DropdownMenuItem<String>>((String value) {
                       return DropdownMenuItem<String>(
@@ -1298,7 +1298,7 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
                 padding: const EdgeInsets.all(10),
                 margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(.05),
+                  color: Colors.white.withValues(alpha: .05),
                   borderRadius: const BorderRadius.all(Radius.circular(12)),
                 ),
                 child: Row(
@@ -1321,7 +1321,7 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
                     ),
                     Icon(
                       Icons.arrow_drop_down_rounded,
-                      color: Colors.white.withOpacity(.5),
+                      color: Colors.white.withValues(alpha: .5),
                     )
                   ],
                 )
@@ -1331,7 +1331,7 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
         ));
         list.add(Container(
           height: 1,
-          color: AppColors.getTheme().textColor.withOpacity(.1),
+          color: AppColors.getTheme().textColor.withValues(alpha: .1),
         ));
         list.add(const SizedBox(height: 6));
         list.add(
@@ -1357,7 +1357,7 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
                   Container(
                     decoration: BoxDecoration(
                         borderRadius: const BorderRadius.all(Radius.circular(90)),
-                        color: AppColors.getTheme().textColor.withOpacity(.06)
+                        color: AppColors.getTheme().textColor.withValues(alpha: .06)
                     ),
                     child: IconButton(
                       onPressed: (){
@@ -1366,7 +1366,7 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
                       },
                       icon: Icon(
                         Icons.question_mark_rounded,
-                        color: AppColors.getTheme().textColor.withOpacity(.4),
+                        color: AppColors.getTheme().textColor.withValues(alpha: .4),
                       ),
                       enableFeedback: true,
                       iconSize: 24,
@@ -1375,7 +1375,7 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
                   const Padding(padding: EdgeInsets.only(right: 16)),
                   Container(
                     decoration: BoxDecoration(
-                      color: AppColors.getTheme().textColor.withOpacity(.05),
+                      color: AppColors.getTheme().textColor.withValues(alpha: .05),
                       borderRadius: BorderRadius.all(Radius.circular(14))
                     ),
                     padding: const EdgeInsets.all(4),
@@ -1402,7 +1402,7 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
                               isDense: true,
                               hintText: AppStrings.getLanguagePack().popup_case1_settingOption7_WeekOffsetAuto,
                               hintStyle: TextStyle(
-                                  color: AppColors.getTheme().textColor.withOpacity(.4),
+                                  color: AppColors.getTheme().textColor.withValues(alpha: .4),
                                   fontSize: 14,
                                   fontWeight: FontWeight.w400
                               ),
@@ -1439,7 +1439,7 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
                                   },
                                   icon: Icon(
                                     Icons.arrow_drop_up_rounded,
-                                    color: AppColors.getTheme().textColor.withOpacity(.5),
+                                    color: AppColors.getTheme().textColor.withValues(alpha: .5),
                                     size: 16,
                                   ),
                                   padding: EdgeInsets.zero,
@@ -1468,7 +1468,7 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
                                   },
                                   icon: Icon(
                                     Icons.arrow_drop_down_rounded,
-                                    color: AppColors.getTheme().textColor.withOpacity(.5),
+                                    color: AppColors.getTheme().textColor.withValues(alpha: .5),
                                     size: 16,
                                   ),
                                   padding: EdgeInsets.zero,
@@ -1497,7 +1497,7 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
             style: TextStyle(
               fontWeight: FontWeight.w300,
               fontSize: 9,
-              color: AppColors.getTheme().onSecondary.withOpacity(.8)
+              color: AppColors.getTheme().onSecondary.withValues(alpha: .8)
             ),
           ),
         ));
@@ -1512,8 +1512,8 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
             AppHaptics.lightImpact();
           },
           style: ButtonStyle(
-            backgroundColor: WidgetStateProperty.all(AppColors.getTheme().textColor.withOpacity(.1)),
-            overlayColor: WidgetStateProperty.all(AppColors.getTheme().textColor.withOpacity(.05)),
+            backgroundColor: WidgetStateProperty.all(AppColors.getTheme().textColor.withValues(alpha: .1)),
+            overlayColor: WidgetStateProperty.all(AppColors.getTheme().textColor.withValues(alpha: .05)),
           ),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 45, vertical: 15),
@@ -1536,7 +1536,7 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
           },
           style: ButtonStyle(
             backgroundColor: WidgetStateProperty.all(const Color.fromRGBO(0xFF, 0xFF, 0xFF, 0.05)),
-            overlayColor: WidgetStateProperty.all(Colors.white.withOpacity(.05)),
+            overlayColor: WidgetStateProperty.all(Colors.white.withValues(alpha: .05)),
           ),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 45, vertical: 15),
@@ -1567,7 +1567,7 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
         ));
         list.add(const SizedBox(height: 3));
         list.add(Container(
-          color: AppColors.getTheme().textColor.withOpacity(0.3),
+          color: AppColors.getTheme().textColor.withValues(alpha: 0.3),
           margin: const EdgeInsets.symmetric(vertical: 10),
           height: 2,
         ));
@@ -1591,8 +1591,8 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
             AppHaptics.lightImpact();
           },
           style: ButtonStyle(
-            backgroundColor: WidgetStateProperty.all(AppColors.getTheme().textColor.withOpacity(.1)),
-            overlayColor: WidgetStateProperty.all(AppColors.getTheme().textColor.withOpacity(.05)),
+            backgroundColor: WidgetStateProperty.all(AppColors.getTheme().textColor.withValues(alpha: .1)),
+            overlayColor: WidgetStateProperty.all(AppColors.getTheme().textColor.withValues(alpha: .05)),
           ),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 45, vertical: 15),
@@ -1622,7 +1622,7 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
         ));
         list.add(const SizedBox(height: 3));
         list.add(Container(
-          color: AppColors.getTheme().textColor.withOpacity(0.3),
+          color: AppColors.getTheme().textColor.withValues(alpha: 0.3),
           margin: const EdgeInsets.symmetric(vertical: 10),
           height: 2,
         ));
@@ -1666,8 +1666,8 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
             });
           },
           style: ButtonStyle(
-            backgroundColor: WidgetStateProperty.all(AppColors.getTheme().textColor.withOpacity(.1)),
-            overlayColor: WidgetStateProperty.all(AppColors.getTheme().textColor.withOpacity(.05)),
+            backgroundColor: WidgetStateProperty.all(AppColors.getTheme().textColor.withValues(alpha: .1)),
+            overlayColor: WidgetStateProperty.all(AppColors.getTheme().textColor.withValues(alpha: .05)),
           ),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 45, vertical: 15),
@@ -1697,7 +1697,7 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
         ));
         list.add(const SizedBox(height: 3));
         list.add(Container(
-          color: AppColors.getTheme().textColor.withOpacity(0.3),
+          color: AppColors.getTheme().textColor.withValues(alpha: 0.3),
           margin: const EdgeInsets.symmetric(vertical: 10),
           height: 2,
         ));
@@ -1883,8 +1883,8 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
             AppHaptics.lightImpact();
           },
           style: ButtonStyle(
-            backgroundColor: WidgetStateProperty.all(AppColors.getTheme().textColor.withOpacity(.1)),
-            overlayColor: WidgetStateProperty.all(AppColors.getTheme().textColor.withOpacity(.05)),
+            backgroundColor: WidgetStateProperty.all(AppColors.getTheme().textColor.withValues(alpha: .1)),
+            overlayColor: WidgetStateProperty.all(AppColors.getTheme().textColor.withValues(alpha: .05)),
           ),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 45, vertical: 15),
@@ -1914,7 +1914,7 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
         ));
         list.add(const SizedBox(height: 3));
         list.add(Container(
-          color: AppColors.getTheme().textColor.withOpacity(0.3),
+          color: AppColors.getTheme().textColor.withValues(alpha: 0.3),
           margin: const EdgeInsets.symmetric(vertical: 10),
           height: 2,
         ));
@@ -2058,8 +2058,8 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
             AppHaptics.lightImpact();
           },
           style: ButtonStyle(
-            backgroundColor: WidgetStateProperty.all(AppColors.getTheme().textColor.withOpacity(.1)),
-            overlayColor: WidgetStateProperty.all(AppColors.getTheme().textColor.withOpacity(.05)),
+            backgroundColor: WidgetStateProperty.all(AppColors.getTheme().textColor.withValues(alpha: .1)),
+            overlayColor: WidgetStateProperty.all(AppColors.getTheme().textColor.withValues(alpha: .05)),
           ),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 45, vertical: 15),
@@ -2089,7 +2089,7 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
         ));
         list.add(const SizedBox(height: 3));
         list.add(Container(
-          color: AppColors.getTheme().textColor.withOpacity(0.3),
+          color: AppColors.getTheme().textColor.withValues(alpha: 0.3),
           margin: const EdgeInsets.symmetric(vertical: 10),
           height: 2,
         ));
@@ -2113,8 +2113,8 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
             AppHaptics.lightImpact();
           },
           style: ButtonStyle(
-            backgroundColor: WidgetStateProperty.all(AppColors.getTheme().textColor.withOpacity(.1)),
-            overlayColor: WidgetStateProperty.all(AppColors.getTheme().textColor.withOpacity(.05)),
+            backgroundColor: WidgetStateProperty.all(AppColors.getTheme().textColor.withValues(alpha: .1)),
+            overlayColor: WidgetStateProperty.all(AppColors.getTheme().textColor.withValues(alpha: .05)),
           ),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 45, vertical: 15),
@@ -2144,7 +2144,7 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
         ));
         list.add(const SizedBox(height: 3));
         list.add(Container(
-          color: AppColors.getTheme().textColor.withOpacity(0.3),
+          color: AppColors.getTheme().textColor.withValues(alpha: 0.3),
           margin: const EdgeInsets.symmetric(vertical: 10),
           height: 2,
         ));
@@ -2172,8 +2172,8 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
             AppHaptics.lightImpact();
           },
           style: ButtonStyle(
-            backgroundColor: WidgetStateProperty.all(AppColors.getTheme().textColor.withOpacity(.1)),
-            overlayColor: WidgetStateProperty.all(AppColors.getTheme().textColor.withOpacity(.05)),
+            backgroundColor: WidgetStateProperty.all(AppColors.getTheme().textColor.withValues(alpha: .1)),
+            overlayColor: WidgetStateProperty.all(AppColors.getTheme().textColor.withValues(alpha: .05)),
           ),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 45, vertical: 15),
@@ -2203,7 +2203,7 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
         ));
         list.add(const SizedBox(height: 3));
         list.add(Container(
-          color: AppColors.getTheme().textColor.withOpacity(0.3),
+          color: AppColors.getTheme().textColor.withValues(alpha: 0.3),
           margin: const EdgeInsets.symmetric(vertical: 10),
           height: 2,
         ));
@@ -2231,8 +2231,8 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
             AppHaptics.lightImpact();
           },
           style: ButtonStyle(
-            backgroundColor: WidgetStateProperty.all(AppColors.getTheme().textColor.withOpacity(.1)),
-            overlayColor: WidgetStateProperty.all(AppColors.getTheme().textColor.withOpacity(.05)),
+            backgroundColor: WidgetStateProperty.all(AppColors.getTheme().textColor.withValues(alpha: .1)),
+            overlayColor: WidgetStateProperty.all(AppColors.getTheme().textColor.withValues(alpha: .05)),
           ),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 45, vertical: 15),
@@ -2249,7 +2249,7 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
       case 9: // 2FA Mód
         list.add(Text("Kétlépcsős azonosítás", style: TextStyle(color: AppColors.getTheme().textColor, fontSize: 22, fontWeight: FontWeight.bold)));
         list.add(const SizedBox(height: 10));
-        list.add(Text("Add meg a(z) Hitelesítő alkalmazásban generált 6 jegyű kódot!", textAlign: TextAlign.center, style: TextStyle(color: AppColors.getTheme().textColor.withOpacity(0.7))));
+        list.add(Text("Add meg a(z) Hitelesítő alkalmazásban generált 6 jegyű kódot!", textAlign: TextAlign.center, style: TextStyle(color: AppColors.getTheme().textColor.withValues(alpha: 0.7))));
         list.add(const SizedBox(height: 25));
         list.add(TextField(
           autofocus: true,
@@ -2259,7 +2259,7 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
           style: TextStyle(color: AppColors.getTheme().textColor, fontSize: 28, letterSpacing: 8, fontWeight: FontWeight.bold),
           decoration: InputDecoration(
             filled: true,
-            fillColor: AppColors.getTheme().textColor.withOpacity(0.05),
+            fillColor: AppColors.getTheme().textColor.withValues(alpha: 0.05),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none),
           ),
           onChanged: (val) {
@@ -2294,8 +2294,8 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
             AppHaptics.lightImpact();
           },
           style: ButtonStyle(
-            backgroundColor: WidgetStateProperty.all(AppColors.getTheme().textColor.withOpacity(.1)),
-            overlayColor: WidgetStateProperty.all(AppColors.getTheme().textColor.withOpacity(.05)),
+            backgroundColor: WidgetStateProperty.all(AppColors.getTheme().textColor.withValues(alpha: .1)),
+            overlayColor: WidgetStateProperty.all(AppColors.getTheme().textColor.withValues(alpha: .05)),
           ),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 45, vertical: 15),

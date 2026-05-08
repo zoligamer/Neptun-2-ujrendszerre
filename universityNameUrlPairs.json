@@ -2,103 +2,103 @@
    "Institutes":[
       {
          "Name":"A Tan Kapuja Buddhista Főiskola",
-         "Url":"https://host.sdakft.hu/tkbfhw/MobileService.svc"
+         "Url":"https://host.sdakft.hu/tkbfhw"
       },
       {
          "Name":"Állatorvostudományi Egyetem",
-         "Url":"https://neptun.univet.hu/ate_hw/MobileService.svc"
+         "Url":"https://neptun.univet.hu/ate_hw"
       },
       {
          "Name":"Apor Vilmos Katolikus Főiskola",
-         "Url":"https://neptun.avkf.hu/hallgato/MobileService.svc"
+         "Url":"https://neptun.avkf.hu/hallgatoiangular"
       },
       {
          "Name":"Bhaktivedanta Hittudományi Főiskola",
-         "Url":"https://host.sdakft.hu/bhfhw/MobileService.svc"
+         "Url":"https://host.sdakft.hu/bhfhw"
       },
       {
          "Name":"Brenner János Hittudományi Főiskola",
-         "Url":"https://host.sdakft.hu/bjhfhw/MobileService.svc"
+         "Url":"https://host.sdakft.hu/bjhfhw"
       },
       {
          "Name":"Budapesti Corvinus Egyetem",
-         "Url":"https://neptun3r.web.uni-corvinus.hu/Hallgatoi/MobileService.svc"
+         "Url":"https://neptun3r.web.uni-corvinus.hu/Hallgatoi"
       },
       {
          "Name":"Budapesti Gazdasági Egyetem",
-         "Url":"https://neptun17.uni-bge.hu/hallgato/MobileService.svc"
+         "Url":"https://neptun18.uni-bge.hu/hallgato"
       },
       {
          "Name":"Budapesti Metropolitan Egyetem",
-         "Url":"https://neptunweb1.metropolitan.hu/hallgato/MobileService.svc"
+         "Url":"https://neptunweb1.metropolitan.hu/hallgato"
       },
       {
          "Name":"Budapesti Műszaki és Gazdaságtudományi Egyetem",
-         "Url":"https://neptun.bme.hu/hallgatoi/MobileService.svc"
+         "Url":"https://neptun.bme.hu/hallgatoi"
       },
       {
          "Name":"Debreceni Egyetem",
-         "Url":"https://www-h.neptun.unideb.hu/hallgato/MobileService.svc"
+         "Url":"https://www-h-ng.neptun.unideb.hu/hallgato_ng"
       },
       {
          "Name":"Debreceni Református Hittudományi Egyetem",
-         "Url":"https://host.sdakft.hu/drhehw/MobileService.svc"
+         "Url":"https://host.sdakft.hu/drhehw"
       },
       {
          "Name":"Dunaújvárosi Egyetem",
-         "Url":"https://nappw.dfad.duf.hu/hallgato/MobileService.svc"
+         "Url":"https://nappw.dfad.duf.hu/hallgato_ng"
       },
       {
          "Name":"Edutus Főiskola",
-         "Url":"https://neptun.edutus.hu/hallgato/MobileService.svc"
+         "Url":"https://neptun.edutus.hu/hallgato"
       },
       {
          "Name":"Eötvös József Főiskola",
-         "Url":"https://neptun.ejf.hu/hallgato/MobileService.svc"
+         "Url":"https://neptun.ejf.hu/hallgato_ng"
       },
       {
          "Name":"Eötvös Loránd Tudományegyetem",
-         "Url":null
+         "Url":"https://neptun.elte.hu/Account"
       },
       {
          "Name":"Eszterházy Károly Katolikus Egyetem",
-         "Url":"https://neptunh.uni-eszterhazy.hu/Hallgato/MobileService.svc"
+         "Url":"https://neptunh.uni-eszterhazy.hu/Hallgato"
       },
       {
          "Name":"Gábor Dénes Egyetem",
-         "Url":"https://neptun.gdf.hu/hallgato/MobileService.svc"
+         "Url":"https://neptun.gde.hu/hallgato"
       },
       {
          "Name":"Gál Ferenc Egyetem",
-         "Url":"https://host.sdakft.hu/gfehw/MobileService.svc"
+         "Url":"https://host.sdakft.hu/gfehw"
       },
       {
          "Name":"IBS Nemzetközi Üzleti Főiskola",
-         "Url":"https://neptun.ibs-b.hu/hallgato/MobileService.svc"
+         "Url":"https://neptun.ibs-b.hu/student"
       },
       {
          "Name":"Kaposvári Egyetem",
-         "Url":"https://neptunhallgato.uni-mate.hu/hallgato/MobileService.svc"
+         "Url":"https://hallgato.uni-mate.hu/hallgato_ng"
       },
       {
          "Name":"Károli Gáspár Református Egyetem",
-         "Url":"https://neptun.kre.hu/hallgato/MobileService.svc"
+         "Url":"https://neptun.kre.hu/hallgato"
       },
       {
          "Name":"Károly Róbert Főiskola, Gyöngyös",
-         "Url":"https://neptunhallgato.uni-mate.hu/hallgato/MobileService.svc"
+         "Url":"https://hallgato.uni-mate.hu/hallgato_ng"
       },
       {
          "Name":"Kodolányi János Egyetem",
-         "Url":"https://neptun.kodolanyi.hu/hallgato/MobileService.svc"
+         "Url":"https://neptun.kodolanyi.hu/hallgato_NG"
       },
       {
          "Name":"Liszt Ferenc Zeneművészeti Egyetem",
-         "Url":"https://neptun.lfze.hu/hallgato/MobileService.svc"
+         "Url":"https://neptun.lfze.hu/hallgato"
       },
       {
          "Name":"Magyar Agrár- és Élettudományi Egyetem",
-         "Url":"https://neptunhallgato.uni-mate.hu/hallgato/MobileService.svc"
+         "Url":"https://hallgato.uni-mate.hu/hallgato_ng"
       },
       {
          "Name":"Magyar Képzőművészeti Egyetem",
@@ -106,51 +106,51 @@
       },
       {
          "Name":"Magyar Táncművészeti Egyetem",
-         "Url":"https://host.sdakft.hu/mtfhw/MobileService.svc"
+         "Url":"https://host.sdakft.hu/mtfhw"
       },
       {
          "Name":"Milton Friedman Egyetem",
-         "Url":"https://neptun.uni-milton.hu/hallgato/MobileService.svc"
+         "Url":"https://neptun.uni-milton.hu/hallgato"
       },
       {
          "Name":"Miskolci Egyetem",
-         "Url":"https://neptun32.uni-miskolc.hu/hallgato/MobileService.svc"
+         "Url":"https://neptunweb1.uni-miskolc.hu/hallgato_ng"
       },
       {
          "Name":"Moholy-Nagy Művészeti Egyetem",
-         "Url":"https://host.sdakft.hu/momehw/MobileService.svc"
+         "Url":"https://host.sdakft.hu/momehw"
       },
       {
          "Name":"Nemzeti Közszolgálati Egyetem",
-         "Url":"https://neptunweb.uni-nke.hu/hallgato/MobileService.svc"
+         "Url":"https://neptunweb.uni-nke.hu/hallgato_ng"
       },
       {
          "Name":"Neumann János Egyetem",
-         "Url":"https://neptun.nje.hu/hallgato/MobileService.svc"
+         "Url":"https://neptun.nje.hu/hallgato"
       },
       {
          "Name":"Nyíregyházi Egyetem",
-         "Url":"https://neptunweb.nye.hu/hallgato/MobileService.svc"
+         "Url":"https://neptunweb.nye.hu/hallgato"
       },
       {
          "Name":"Óbudai Egyetem",
-         "Url":"https://neptun.uni-obuda.hu/hallgato/MobileService.svc"
+         "Url":"https://neptun.uni-obuda.hu/ujhallgato"
       },
       {
          "Name":"Országos Rabbiképző - Zsidó Egyetem",
-         "Url":"https://neptun.or-zse.hu/hallgato/MobileService.svc"
+         "Url":"https://neptun.or-zse.hu/hallgato"
       },
       {
          "Name":"Pannon Egyetem",
-         "Url":"https://neptun-ws01.uni-pannon.hu/hallgato/MobileService.svc"
+         "Url":"https://neptun-ws01.uni-pannon.hu/hallgato"
       },
       {
          "Name":"Pázmány Péter Katolikus Egyetem",
-         "Url":"https://neptun3.ppke.hu/hallgato/MobileService.svc"
+         "Url":"https://neptun3.ppke.hu/hallgato2_uj"
       },
       {
          "Name":"Pécsi Tudományegyetem",
-         "Url":"https://neptun-web2.tr.pte.hu/hallgato/MobileService.svc"
+         "Url":"https://neptun-web4.tr.pte.hu/hallgato"
       },
       {
          "Name":"Sapientia Erdélyi Magyar Tudományegyetem",
@@ -158,31 +158,31 @@
       },
       {
          "Name":"Sapientia Szerzetesi Hittudományi Főiskola",
-         "Url":"https://neptun3r.sapientia.hu/hallgato/MobileService.svc"
+         "Url":"https://neptun3r.sapientia.hu/hallgato"
       },
       {
          "Name":"Semmelweis Egyetem",
-         "Url":"https://neptunweb.semmelweis.hu/hallgato/MobileService.svc"
+         "Url":"https://neptunweb.semmelweis.hu/hallgato"
       },
       {
          "Name":"Soproni Egyetem",
-         "Url":"https://neptun3r.nyme.hu/hallgato/MobileService.svc"
+         "Url":"https://neptun3r.uni-sopron.hu/hallgato_ng"
       },
       {
          "Name":"Széchenyi István Egyetem",
-         "Url":"https://netw5.nnet.sze.hu/hallgato/MobileService.svc"
+         "Url":"https://neptun-hweb.sze.hu/hallgato_ng"
       },
       {
          "Name":"Szegedi Tudományegyetem",
-         "Url":"https://neptun.szte.hu/hallgato/MobileService.svc"
+         "Url":"https://neptun.szte.hu/hallgato"
       },
       {
          "Name":"Szent Atanáz Görög Katolikus Hittudományi Főiskola",
-         "Url":"https://neptun.szentatanaz.hu/hallgato/MobileService.svc"
+         "Url":"https://neptun.szentatanaz.hu/hallgato"
       },
       {
          "Name":"Szent István Egyetem",
-         "Url":"https://netw8.nnet.sze.hu/hallgato/MobileService.svc"
+         "Url":"https://hallgato.uni-mate.hu/hallgato_ng"
       },
       {
          "Name":"Szent Pál Akadémia",
@@ -190,31 +190,31 @@
       },
       {
          "Name":"Színház- és Filmművészeti Egyetem",
-         "Url":"https://host.sdakft.hu/szfehw/MobileService.svc"
+         "Url":"https://host.sdakft.hu/szfehw"
       },
       {
          "Name":"Testnevelési Egyetem",
-         "Url":"https://neptun.tf.hu/hallgato/MobileService.svc"
+         "Url":"https://neptun.tf.hu/hallgato"
       },
       {
          "Name":"Tokaj-Hegyalja Egyetem",
-         "Url":"https://neptun.unithe.hu/hallgato/MobileService.svc"
+         "Url":"https://neptun.unithe.hu/hallgato"
       },
       {
          "Name":"Tomori Pál Főiskola",
-         "Url":"https://host.sdakft.hu/tpfhw/MobileService.svc"
+         "Url":"https://host.sdakft.hu/tpfhw"
       },
       {
          "Name":"Veszprémi Érseki Foiskola",
-         "Url":"https://neptun.vhf.hu/hallgato/MobileService.svc"
+         "Url":"https://neptun.vhf.hu/hallgato_ng"
       },
       {
          "Name":"Wekerle Sándor Üzleti Főiskola",
-         "Url":"https://neptun.wsuf.hu/hallgato/MobileService.svc"
+         "Url":"https://neptun.wsne.hu/hallgato"
       },
       {
          "Name":"Wesley János Lelkészképző Főiskola",
-         "Url":"https://host.sdakft.hu/wjlfhw/MobileService.svc"
+         "Url":"https://host.sdakft.hu/wjlfhw"
       }
    ]
 }

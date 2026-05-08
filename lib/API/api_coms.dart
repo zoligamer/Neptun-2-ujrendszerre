@@ -158,7 +158,7 @@ import '../storage.dart';
     }
 
     static Future<List<dynamic>?> getRawJsonWithNameUrlPairs() async{
-      final url = Uri.parse('https://raw.githubusercontent.com/domedav/Neptun-2/main/universityNameUrlPairs.json');
+      final url = Uri.parse('https://raw.githubusercontent.com/zoligamer/Neptun-Mobile-fork/refs/heads/main/universityNameUrlPairs.json');
       final response = await http.get(url);
 
       if (response.statusCode != 200) {
@@ -224,8 +224,9 @@ import '../storage.dart';
         final responseRaw = await _APIRequest.postRequest(modernApiUrl, body);
         final response = conv.jsonDecode(responseRaw);
 
-        // 2FA ELLENŐRZÉS
-        if (response["data"] != null && response["data"]["requiresTwoFactor"] == true) {
+        // 2FA ELLENŐRZÉS (Mindkét névváltozatot nézzük a biztonság kedvéért)
+        final is2fa = response["data"] != null && (response["data"]["isTwoFactorRequired"] == true || response["data"]["requiresTwoFactor"] == true);
+        if (is2fa) {
           await storage.DataCache.setInstituteUrl(baseUrl);
           await storage.DataCache.setAccessToken(response["data"]["twoFactorLoginToken"]);
           return 2; // 2FA KELL
@@ -242,16 +243,19 @@ import '../storage.dart';
     }
 
     // ÚJ FÜGGVÉNY A 2FA KÓDHOZ
-    static Future<bool> submitTwoFactorCode(String code) async {
+    static Future<bool> submitTwoFactorCode(String username, String password, String code) async {
       try {
         String baseUrl = storage.DataCache.getInstituteUrl() ?? '';
-        String? tempToken = await storage.DataCache.getAccessToken();
+        //String? tempToken = await storage.DataCache.getAccessToken();
 
-        final url = Uri.parse("$baseUrl/api/Account/TwoFactorAuthenticate");
+        final url = Uri.parse("$baseUrl/api/Account/Authenticate");
         final body = conv.jsonEncode({
-          "twoFactorCode": code,
-          "twoFactorLoginToken": tempToken,
-          "rememberDevice": true
+          "userName": username,
+          "password": password,
+          "captcha":"",
+          "captchaIdentifier":"",
+          "token": code,
+          "LCID":1038
         });
 
         final responseRaw = await _APIRequest.postRequest(url, body);
@@ -352,7 +356,7 @@ import '../storage.dart';
       }
 
       if (_cachedTrainingId != null) return _cachedTrainingId;
-      if (!(storage.DataCache.getIsModernApi() ?? false)) return null;
+      if (!(storage.DataCache.getIsModernApi() /*?? false*/)) return null;
 
       try {
         final token = await storage.DataCache.getAccessToken();
@@ -418,7 +422,7 @@ import '../storage.dart';
       final decoded = conv.json.decode(jsonString);
       List<CalendarEntry> list = [];
 
-      if (storage.DataCache.getIsModernApi() ?? false) {
+      if (storage.DataCache.getIsModernApi() /*?? false*/) {
         if (decoded['calendarData'] != null) {
           for (var item in decoded['calendarData']) {
             list.add(CalendarEntry.fromModern(
@@ -456,7 +460,7 @@ import '../storage.dart';
         return '{}';
       }
 
-      if (storage.DataCache.getIsModernApi() ?? false) {
+      if (storage.DataCache.getIsModernApi() /*?? false*/) {
         try {
           final oldPayload = conv.json.decode(calendarJson);
           final startDateRaw = (oldPayload['startDate'] ?? oldPayload['StartDate']).toString();

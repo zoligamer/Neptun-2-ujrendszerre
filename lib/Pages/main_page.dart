@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:developer' as debug;
 import 'dart:io';
 import 'dart:math';
 import 'dart:ui';
@@ -57,13 +56,13 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin{
   double _fbPosY = 0;
   bool _fbNeedAnimate = false;
 
-  static late HomePageState _instance;
+  static HomePageState? _instance;
   HomePageState(){
     _instance = this;
   }
 
   static void showBlurPopup(bool b){
-    _instance.setBlurComplex(b);
+    _instance?.setBlurComplex(b);
   }
 
   bool _showBlur = false;
@@ -128,7 +127,7 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin{
   late int settingsUserWeekOffsetPrev;
   String prevSettingsUserWeekOffset = '';
   static TextEditingController getUserWeekOffsetTextController(){
-    return _instance.settingsUserWeekOffset;
+    return _instance!.settingsUserWeekOffset;
   }
   static Timer? settingsUserWeekOffsetPeriodicLooper = null;
 
@@ -229,8 +228,8 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin{
     settingsUserWeekOffsetPrev = storage.DataCache.getUserWeekOffset()!;
     settingsUserWeekOffset.addListener(() {
       if(settingsUserWeekOffset.text != prevSettingsUserWeekOffset){
-        changedSettingsUserWeekOffset = true;
-        settingsUserWeekOffsetSetup();
+        _instance!.changedSettingsUserWeekOffset = true;
+        _instance!.settingsUserWeekOffsetSetup();
       }
     });
 
@@ -279,7 +278,7 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin{
                  api.Generic.randomLoadingCommentMini(storage.DataCache.getNeedFamilyFriendlyComments()!),
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: AppColors.getTheme().textColor.withOpacity(.4),
+                    color: AppColors.getTheme().textColor.withValues(alpha: .4),
                     fontSize: 11,
                     fontWeight: FontWeight.w300
                   ),
@@ -413,7 +412,7 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin{
         _fbPosY = size.height - 140;
       });
     });
-
+/*
     Future.delayed(Duration(seconds: 5), ()async{
       final hasConnection = storage.DataCache.getHasNetwork();
       final isLoggedIn = storage.DataCache.getHasLogin()!;
@@ -438,7 +437,9 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin{
             mode: 9,
             callback: (kod) async {
               // JAVÍTVA: Hozzáadva az InstitutesRequest és a .toString()
-              bool isOk = await api.InstitutesRequest.submitTwoFactorCode(kod.toString());
+              String usr = storage.DataCache.getUsername() ?? "";
+              String pwd = storage.DataCache.getPassword() ?? "";
+              bool isOk = await api.InstitutesRequest.submitTwoFactorCode(usr, pwd, kod.toString());
               if (isOk) {
                 PopupWidgetHandler.closePopup(context);
                 return; // Sikerült megújítani a munkamenetet!
@@ -463,7 +464,7 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin{
       });
       PopupWidgetHandler.doPopup(context);
     });
-
+*/
     AppColors.clearThemeChangeCallbacks();
     AppColors.subThemeChangeCallback((){
       if(!mounted){
@@ -547,19 +548,19 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin{
   }
 
   static void settingsUserWeekOffsetAdd(int val){
-    _instance.changedSettingsUserWeekOffset = true;
+    _instance!.changedSettingsUserWeekOffset = true;
     final oldVal = storage.DataCache.getUserWeekOffset()!;
     var correctedVal = oldVal + val;
-    correctedVal = clampDouble(correctedVal.toDouble(), -_instance.calcPassedWeekOffsetless().toDouble(), 51 - _instance.calcPassedWeekOffsetless().toDouble()).toInt();
-    _instance.settingsUserWeekOffset.text = correctedVal.toString();
-    _instance.prevSettingsUserWeekOffset = _instance.settingsUserWeekOffset.text;
+    correctedVal = clampDouble(correctedVal.toDouble(), -_instance!.calcPassedWeekOffsetless().toDouble(), 51 - _instance!.calcPassedWeekOffsetless().toDouble()).toInt();
+    _instance!.settingsUserWeekOffset.text = correctedVal.toString();
+    _instance!.prevSettingsUserWeekOffset = _instance!.settingsUserWeekOffset.text;
     Future.delayed(Duration.zero, ()async{
       await storage.DataCache.setUserWeekOffset(correctedVal);
     });
   }
 
   static void settingsUserWeekOffsetChangeDetect(){
-    _instance._settingsUserWeekOffsetChangeDetect();
+    _instance?._settingsUserWeekOffsetChangeDetect();
   }
   void _settingsUserWeekOffsetChangeDetect(){
     final currentOffset = storage.DataCache.getUserWeekOffset()!;
@@ -691,13 +692,13 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin{
 
   static void setupExamNotifications(){
     Future.delayed(Duration.zero, ()async{
-      await _instance._setupExamNotifications(_instance._examNotificationList);
+      await _instance!._setupExamNotifications(_instance!._examNotificationList);
     });
   }
 
   static void cancelExamNotifications(){
     Future.delayed(Duration.zero, ()async{
-      await _instance._cancelExamNotifications();
+      await _instance!._cancelExamNotifications();
     });
   }
 
@@ -746,13 +747,13 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin{
 
   static void setupClassesNotifications(){
     Future.delayed(Duration.zero, ()async{
-      await _instance._setupClassesNotifications(_instance._classesNotificationList);
+      await _instance!._setupClassesNotifications(_instance!._classesNotificationList);
     });
   }
 
   static void cancelClassesNotifications(){
     Future.delayed(Duration.zero, ()async{
-      await _instance._cancelClassesNotifications();
+      await _instance!._cancelClassesNotifications();
     });
   }
 
@@ -779,13 +780,13 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin{
 
   static void setupPaymentsNotifications(){
     Future.delayed(Duration.zero, ()async{
-      await _instance._setupPaymentsNotification(_instance._paymentsNotificationList);
+      await _instance!._setupPaymentsNotification(_instance!._paymentsNotificationList);
     });
   }
 
   static void cancelPaymentsNotifications(){
     Future.delayed(Duration.zero, ()async{
-      await _instance._cancelPaymentsNotifications();
+      await _instance!._cancelPaymentsNotifications();
     });
   }
 
@@ -817,13 +818,13 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin{
   
   static void setupPeriodsNotifications(){
     Future.delayed(Duration.zero, ()async{
-      await _instance._setupPeriodsNotification(_instance._periodsNotificationList);
+      await _instance!._setupPeriodsNotification(_instance!._periodsNotificationList);
     });
   }
 
   static void cancelPeriodsNotifications(){
     Future.delayed(Duration.zero, ()async{
-      await _instance._cancelPeriodsNotifications();
+      await _instance!._cancelPeriodsNotifications();
     });
   }
 
@@ -1030,7 +1031,7 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin{
         child: Container(
           margin: const EdgeInsets.all(15),
           decoration: BoxDecoration(
-            color: w.isNotEmpty ? AppColors.getTheme().textColor.withOpacity(0.03) : Colors.transparent,
+            color: w.isNotEmpty ? AppColors.getTheme().textColor.withValues(alpha: 0.03) : Colors.transparent,
             borderRadius: BorderRadius.circular(14),
           ),
           child: Column(
@@ -1047,7 +1048,7 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin{
                 api.Generic.randomLoadingComment(storage.DataCache.getNeedFamilyFriendlyComments()!),
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: AppColors.getTheme().textColor.withOpacity(.2),
+                  color: AppColors.getTheme().textColor.withValues(alpha: .2),
                   fontWeight: FontWeight.w300,
                   fontSize: 10
                 ),
@@ -1310,14 +1311,14 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin{
           child: Container(
             height: 2,
             margin: const EdgeInsets.symmetric(horizontal: 30),
-            color: expired ? AppColors.getTheme().errorRed.withOpacity(.3) : AppColors.getTheme().textColor.withOpacity(.3),
+            color: expired ? AppColors.getTheme().errorRed.withValues(alpha: .3) : AppColors.getTheme().textColor.withValues(alpha: .3),
           ),
         ),
         Text(
           text,
           textAlign: TextAlign.center,
           style: TextStyle(
-              color: expired ? AppColors.getTheme().errorRed.withOpacity(.6) : AppColors.getTheme().textColor.withOpacity(.6),
+              color: expired ? AppColors.getTheme().errorRed.withValues(alpha: .6) : AppColors.getTheme().textColor.withValues(alpha: .6),
               fontWeight: FontWeight.w600,
               fontSize: 14
           ),
@@ -1326,7 +1327,7 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin{
           child: Container(
             height: 2,
             margin: const EdgeInsets.symmetric(horizontal: 30),
-            color: expired ? AppColors.getTheme().errorRed.withOpacity(.3) : AppColors.getTheme().textColor.withOpacity(.3),
+            color: expired ? AppColors.getTheme().errorRed.withValues(alpha: .3) : AppColors.getTheme().textColor.withValues(alpha: .3),
           ),
         ),
       ],
@@ -2002,12 +2003,12 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin{
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            AppColors.getTheme().textColor.withOpacity(0),
-            AppColors.getTheme().textColor.withOpacity(0.2),
-            AppColors.getTheme().textColor.withOpacity(0.4),
-            AppColors.getTheme().textColor.withOpacity(0.4),
-            AppColors.getTheme().textColor.withOpacity(0.2),
-            AppColors.getTheme().textColor.withOpacity(0),
+            AppColors.getTheme().textColor.withValues(alpha: 0),
+            AppColors.getTheme().textColor.withValues(alpha: 0.2),
+            AppColors.getTheme().textColor.withValues(alpha: 0.4),
+            AppColors.getTheme().textColor.withValues(alpha: 0.4),
+            AppColors.getTheme().textColor.withValues(alpha: 0.2),
+            AppColors.getTheme().textColor.withValues(alpha: 0),
           ]
         ),
       ),
@@ -2125,7 +2126,7 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin{
                   child: BackdropFilter(
                      filter: ImageFilter.blur(sigmaX: blurAnimation.value * 15, sigmaY: blurAnimation.value * 15),
                      child: Container(
-                       color: Colors.black.withOpacity(blurAnimation.value * 0.4),
+                       color: Colors.black.withValues(alpha: blurAnimation.value * 0.4),
                      ),
                    ),
                 );
@@ -2170,7 +2171,7 @@ class CalendarPageWidget extends StatelessWidget{
                     decelerationRate: ScrollDecelerationRate.fast,
                   ),
                   indicator: BoxDecoration(
-                    color: AppColors.getTheme().textColor.withOpacity(.1),
+                    color: AppColors.getTheme().textColor.withValues(alpha: .1),
                     borderRadius: const BorderRadius.all(Radius.circular(26))
                   ),
                   onTap: (index){
@@ -2324,7 +2325,7 @@ class MarkbookPageWidget extends StatelessWidget{
                                 padding: const EdgeInsets.symmetric(horizontal: 35, vertical: 12),
                                 width: MediaQuery.of(context).size.width,
                                 decoration: BoxDecoration(
-                                  color: AppColors.getTheme().textColor.withOpacity(0.03),
+                                  color: AppColors.getTheme().textColor.withValues(alpha: 0.03),
                                   borderRadius: BorderRadius.circular(20),
                                   //border: Border.all(color: Colors.white.withOpacity(.2), width: 1)
                                 ),
@@ -2366,7 +2367,7 @@ class MarkbookPageWidget extends StatelessWidget{
                             Container(
                               margin: const EdgeInsets.all(15),
                               decoration: BoxDecoration(
-                                color: homePage.markbookList.isNotEmpty ? AppColors.getTheme().textColor.withOpacity(0.03) : Colors.transparent,
+                                color: homePage.markbookList.isNotEmpty ? AppColors.getTheme().textColor.withValues(alpha: 0.03) : Colors.transparent,
                                 borderRadius: BorderRadius.circular(14),
                               ),
                               child: Column(
@@ -2387,7 +2388,7 @@ class MarkbookPageWidget extends StatelessWidget{
                                     api.Generic.randomLoadingComment(storage.DataCache.getNeedFamilyFriendlyComments()!),
                                     textAlign: TextAlign.center,
                                     style: TextStyle(
-                                        color: AppColors.getTheme().textColor.withOpacity(.2),
+                                        color: AppColors.getTheme().textColor.withValues(alpha: .2),
                                         fontWeight: FontWeight.w300,
                                         fontSize: 10
                                     ),
@@ -2457,7 +2458,7 @@ class PaymentsPageWidget extends StatelessWidget{
                           margin: const EdgeInsets.all(15),
                           width: MediaQuery.of(context).size.width,
                           decoration: BoxDecoration(
-                            color: homePage.paymentsList.isNotEmpty ? AppColors.getTheme().textColor.withOpacity(0.03) : Colors.transparent,
+                            color: homePage.paymentsList.isNotEmpty ? AppColors.getTheme().textColor.withValues(alpha: 0.03) : Colors.transparent,
                             borderRadius: BorderRadius.circular(14),
                           ),
                           child: Column(
@@ -2478,7 +2479,7 @@ class PaymentsPageWidget extends StatelessWidget{
                                   api.Generic.randomLoadingComment(storage.DataCache.getNeedFamilyFriendlyComments()!),
                                   textAlign: TextAlign.center,
                                   style: TextStyle(
-                                      color: AppColors.getTheme().textColor.withOpacity(.2),
+                                      color: AppColors.getTheme().textColor.withValues(alpha: .2),
                                       fontWeight: FontWeight.w300,
                                       fontSize: 10
                                   ),
@@ -2543,7 +2544,7 @@ class PeriodsPageWidget extends StatelessWidget{
                           child: Container(
                             margin: const EdgeInsets.all(15),
                             decoration: BoxDecoration(
-                              color: homePage.periodList.isNotEmpty ? AppColors.getTheme().textColor.withOpacity(0.03) : Colors.transparent,
+                              color: homePage.periodList.isNotEmpty ? AppColors.getTheme().textColor.withValues(alpha: .03) : Colors.transparent,
                               borderRadius: BorderRadius.circular(14),
                             ),
                             child: Column(
@@ -2564,7 +2565,7 @@ class PeriodsPageWidget extends StatelessWidget{
                                     api.Generic.randomLoadingComment(storage.DataCache.getNeedFamilyFriendlyComments()!),
                                     textAlign: TextAlign.center,
                                     style: TextStyle(
-                                        color: AppColors.getTheme().textColor.withOpacity(.2),
+                                        color: AppColors.getTheme().textColor.withValues(alpha: .2),
                                         fontWeight: FontWeight.w300,
                                         fontSize: 10
                                     ),
@@ -2615,7 +2616,7 @@ class MailsPageWidget extends StatelessWidget{
                           child: Container(
                             margin: const EdgeInsets.all(15),
                             decoration: BoxDecoration(
-                              color: homePage.mailList.isNotEmpty ? AppColors.getTheme().textColor.withOpacity(0.03) : Colors.transparent,
+                              color: homePage.mailList.isNotEmpty ? AppColors.getTheme().textColor.withValues(alpha: 0.03) : Colors.transparent,
                               borderRadius: BorderRadius.circular(14),
                             ),
                             child: Column(
@@ -2636,7 +2637,7 @@ class MailsPageWidget extends StatelessWidget{
                                     api.Generic.randomLoadingComment(storage.DataCache.getNeedFamilyFriendlyComments()!),
                                     textAlign: TextAlign.center,
                                     style: TextStyle(
-                                        color: AppColors.getTheme().textColor.withOpacity(.2),
+                                        color: AppColors.getTheme().textColor.withValues(alpha: .2),
                                         fontWeight: FontWeight.w300,
                                         fontSize: 10
                                     ),

@@ -210,7 +210,7 @@ class TopNavigatorWidget extends StatelessWidget{
                           if(!Platform.isAndroid){
                             return;
                           }
-                          final url = Uri.parse('https://www.buymeacoffee.com/domedav');
+                          final url = Uri.parse('https://buymeacoffee.com/zoligamer');
                           launchUrl(url).whenComplete(() {
                             Fluttertoast.showToast(
                               msg: '❤️',
@@ -236,13 +236,13 @@ class TopNavigatorWidget extends StatelessWidget{
                           if(!Platform.isAndroid){
                             return;
                           }
-                          final url = Uri.parse('https://github.com/domedav/Neptun-2/issues/new/choose');
+                          final url = Uri.parse('https://github.com/zoligamer/Neptun-Mobile-fork/issues/new/choose');
                           launchUrl(url);
                         }
                       });
                     },
                     style: ButtonStyle(
-                      backgroundColor: WidgetStateProperty.all(AppColors.getTheme().textColor.withOpacity(.1)),
+                      backgroundColor: WidgetStateProperty.all(AppColors.getTheme().textColor.withValues(alpha: .1)),
                       padding: WidgetStateProperty.all(const EdgeInsets.symmetric(horizontal: 16, vertical: 12)),
                     ),
                     icon: Icon(
