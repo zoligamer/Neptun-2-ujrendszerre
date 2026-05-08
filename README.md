@@ -13,7 +13,7 @@ Funkciók:
 **Ha van valami ötleted, vagy simán csak egy hibát akarsz bejelenteni, a hibabejelentés fülnél tedd meg.**
 
 Az alkalmazás még fejlesztés alatt áll, így ez még nem tökéletes. ⚠️
-
+Az alkalmazás alapjainak fejlesztőjét itt megtalálod! Hatalmas pacsi neki az eddigi rendszer biztosításáért! https://github.com/domedav/Neptun-2
 
 ## 1.0.0
 Órarend fül, bejelentkezés alapok
