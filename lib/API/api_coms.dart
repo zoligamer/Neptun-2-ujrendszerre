@@ -392,7 +392,7 @@ import '../storage.dart';
               startEpoch: item['start_ms'],
               endEpoch: item['end_ms'],
               location: item['location'],
-              title: item['title'],
+              title: item['name'],
               isExam: item['type'] == 1,
               subjectCode: item['subjectCode'],
               teacher: item['teacher'],
