@@ -1,4 +1,3 @@
-//import 'dart:developer';
 import '../storage.dart' as storage;
 import 'package:flutter/material.dart';
 import 'package:neptun2/language.dart';
@@ -14,7 +13,7 @@ class TimetableCurrentlySelected{
   static api.CalendarEntry? entry;
 }
 
-class TimetableElementWidget extends StatelessWidget{
+class TimetableElementWidget extends StatelessWidget {
 
   late final String title;
   late final String location;
@@ -27,7 +26,12 @@ class TimetableElementWidget extends StatelessWidget{
 
   late final bool currentOverride;
 
-  TimetableElementWidget({super.key, required this.entry, required this.position, required this.isCurrent}){
+  late final bool isTask; // ÚJ
+
+  TimetableElementWidget(
+      {super.key, required this.entry, required this.position, required this.isCurrent}) {
+    isExam = entry.isExam;
+    isTask = entry.isTask; // ÚJ
     title = entry.title;
     location = entry.location;
 
@@ -37,7 +41,8 @@ class TimetableElementWidget extends StatelessWidget{
 
     displayStartTime = "$hour:$minute";
 
-    date = DateTime.fromMillisecondsSinceEpoch(entry.endEpoch).subtract(Duration(hours: date.hour, minutes: date.minute));
+    date = DateTime.fromMillisecondsSinceEpoch(entry.endEpoch).subtract(
+        Duration(hours: date.hour, minutes: date.minute));
     hour = date.hour.toString().padLeft(2, '0');
     minute = date.minute.toString().padLeft(2, '0');
 
@@ -46,27 +51,30 @@ class TimetableElementWidget extends StatelessWidget{
     var realMinutes = 0;
     var realHours = 0;
     var i = 1;
-    for (realMinutes = 0; realMinutes <= totalMins && realMinutes + 45 <= totalMins; realMinutes += 45){
-      if(i % 2 == 0){
+    for (
+    realMinutes = 0; realMinutes <= totalMins && realMinutes + 45 <= totalMins;
+    realMinutes += 45) {
+      if (i % 2 == 0) {
         realHours++;
       }
       i++;
     }
     realMinutes -= realHours * 60;
 
-    date = DateTime.fromMillisecondsSinceEpoch(entry.startEpoch).add(Duration(hours: realHours, minutes: realMinutes));
+    date = DateTime.fromMillisecondsSinceEpoch(entry.startEpoch).add(
+        Duration(hours: realHours, minutes: realMinutes));
     hour = date.hour.toString().padLeft(2, '0');
     minute = date.minute.toString().padLeft(2, '0');
-    displayEndTime =  "$hour:$minute";
+    displayEndTime = "$hour:$minute";
 
     endDateNormalized = date;
 
-    isExam = entry.isExam;
-
-    if(endDateNormalized.millisecondsSinceEpoch < DateTime.now().millisecondsSinceEpoch){
+    if (endDateNormalized.millisecondsSinceEpoch < DateTime
+        .now()
+        .millisecondsSinceEpoch) {
       currentOverride = false;
     }
-    else{
+    else {
       currentOverride = isCurrent;
     }
   }
@@ -76,331 +84,252 @@ class TimetableElementWidget extends StatelessWidget{
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: (){
-        if(isExam){
-          TimetableCurrentlySelected.entry = entry;
-          PopupWidgetHandler(mode: 5, callback: (_){});
-          PopupWidgetHandler.doPopup(context);
-          return;
-        }
+  // --- BETŰMÉRET SZORZÓ ---
+  // Később, ha kész a Beállítások menü, ezt a storage-ból is lekérheted:
+  // double fontScale = storage.DataCache.getFontScale() ?? 1.0;
+  double fontScale = 1.2; // Próbáld ki 1.15-tel vagy 1.2-vel a teszteléshez!
 
-        // HA VAN CLASSINSTANCE ID (Modern API), Akkor a mi új ablakunk jön be!
-        if (entry.classInstanceId != null && entry.classInstanceId!.isNotEmpty) {
-          showDialog(
-              context: context,
-              builder: (context) {
-                return AlertDialog(
-                  backgroundColor: AppColors.getTheme().rootBackground,
-                  title: Text(title, style: TextStyle(color: AppColors.getTheme().textColor, fontWeight: FontWeight.bold)),
-                  content: FutureBuilder<Map<String, String>>(
-                    future: api.CalendarRequest.getCourseDetails(entry.classInstanceId!),
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const SizedBox(
-                            height: 100,
-                            child: Center(child: CircularProgressIndicator())
-                        );
-                      }
-                      if (snapshot.hasData) {
-                        return Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text("📍 Terem: ${snapshot.data!['room']}", style: TextStyle(color: AppColors.getTheme().textColor, fontSize: 16)),
-                            const SizedBox(height: 10),
-                            Text("👨‍🏫 Tanár: ${snapshot.data!['teacher']}", style: TextStyle(color: AppColors.getTheme().textColor, fontSize: 16)),
-                          ],
-                        );
-                      }
-                      return Text("Hiba a betöltésnél.", style: TextStyle(color: AppColors.getTheme().textColor));
-                    },
-                  ),
-                  actions: [
-                    TextButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: Text("Bezárás", style: TextStyle(color: AppColors.getTheme().textColor))
-                    )
-                  ],
-                );
-              }
-          );
-        } else {
-          // Ha régi API, vagy nincs ID, a régi megszokott popup jön fel
-          TimetableCurrentlySelected.entry = entry;
-          PopupWidgetHandler(mode: 4, callback: (_){});
-          PopupWidgetHandler.doPopup(context);
-        }
-      },
-      child: Container(
-          margin: EdgeInsets.symmetric(horizontal: 15, vertical: currentOverride ? 10 : 25),
-          padding: isExam || currentOverride ? const EdgeInsets.symmetric(vertical: 20, horizontal: 15) : null,
-          decoration: isExam || currentOverride ? BoxDecoration(
-              border: Border.all(
-                  color: isExam ? AppColors.getTheme().errorRed.withValues(alpha: .5) : AppColors.getTheme().currentClassGreen.withValues(alpha: .5),
-                  width: .75
-              ),
-              borderRadius: const BorderRadius.all(Radius.circular(20.0)),
-              color: isExam ? AppColors.getTheme().errorRed.withValues(alpha: .05) : AppColors.getTheme().currentClassGreen.withValues(alpha: .05)
-          ) : const BoxDecoration(
-              color: Colors.transparent
-          ),
-          child: SizedBox(
-            width: MediaQuery.of(context).size.width,
-            child: Row(
-              mainAxisSize: MainAxisSize.max,
-              children: [
-                // Leftmost position
-                Container(
-                  margin: const EdgeInsets.fromLTRB(0, 0, 30, 0),
-                  child: !isExam ? Text(
-                    "$position.",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: currentOverride ? AppColors.getTheme().currentClassGreen : AppColors.getTheme().onPrimaryContainer,
-                      fontWeight: FontWeight.w900,
-                      fontSize: 26.0,
-                    ),
-                    maxLines: 1,
-                  ) : Icon(
-                    Icons.warning_rounded,
-                    color: AppColors.getTheme().errorRed,
-                    size: 28.0,
-                  ),
-                ),
-                // Center
-                Expanded(
-                  flex: 3,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.max,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                          title,
-                          style: TextStyle(
-                              color: AppColors.getTheme().textColor,
-                              fontSize: 15.0,
-                              fontWeight: FontWeight.w600
-                          )
-                      ),
-                      Visibility(
-                        visible: location.trim().isNotEmpty,
-                        child: Text(
-                          // ITT A VARÁZSLAT: Ha nincs terem, kiírja hogy koppints!
-                          location == "Nincs terem" || location == "Nincs megadva" || location.isEmpty ? "👆 Koppints a részletekért" : location,
-                          style: TextStyle(
-                              color: isExam ? AppColors.getTheme().errorRed.withValues(alpha: .7) : AppColors.getTheme().textColor.withValues(alpha: 0.7),
-                              fontSize: 11.0,
-                              fontWeight: FontWeight.w500
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // Rightmost position (EZ A RÉSZ VÁLTOZATLAN)
-                Expanded(
-                  flex: 2,
-                  child: currentOverride ? Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.timelapse_rounded,
-                        color: AppColors.getTheme().currentClassGreen,
-                        size: 20,
-                      ),
-                      const SizedBox(width: 4),
-                      Flexible(
-                        child: Text(
-                          '${(Duration(milliseconds: endDateNormalized.millisecondsSinceEpoch - DateTime.now().millisecondsSinceEpoch)).inHours.remainder(60).toString().padLeft(2, '0')}:${((Duration(milliseconds: endDateNormalized.millisecondsSinceEpoch - DateTime.now().millisecondsSinceEpoch)).inMinutes.remainder(60)).toString().padLeft(2, '0')}',
-                          textAlign: TextAlign.right,
-                          style: TextStyle(
-                            color: AppColors.getTheme().currentClassGreen,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 14.0,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ) : Column(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    mainAxisSize: MainAxisSize.max,
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        displayStartTime,
-                        textAlign: TextAlign.right,
-                        style: TextStyle(
-                          color: isExam ? AppColors.getTheme().errorRed : AppColors.getTheme().onPrimaryContainer,
-                          fontWeight: FontWeight.w600,
-                          fontSize: !isExam ? 14.0 : 16.0,
-                        ),
-                      ),
-                      !isExam ?
-                      Text(
-                        displayEndTime,
-                        textAlign: TextAlign.right,
-                        style: TextStyle(
-                          color: AppColors.getTheme().onPrimary.withValues(alpha: .7),
-                          fontWeight: FontWeight.w500,
-                          fontSize: 12.0,
-                        ),
-                      ) : const SizedBox(),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          )
-      ),
-    );
-  }
-
-/*  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: (){
-        if(isExam){
-          TimetableCurrentlySelected.entry = entry;
-          PopupWidgetHandler(mode: 5, callback: (_){});
-          PopupWidgetHandler.doPopup(context);
-          return;
-        }
+  return GestureDetector(
+    onTap: () {
+      // Ha vizsga, a régi megszokott popup jön fel
+      if (isExam) {
         TimetableCurrentlySelected.entry = entry;
-        PopupWidgetHandler(mode: 4, callback: (_){});
+        PopupWidgetHandler(mode: 5, callback: (_) {});
         PopupWidgetHandler.doPopup(context);
-      },
-      child: Container(
-        margin: EdgeInsets.symmetric(horizontal: 15, vertical: currentOverride ? 10 : 25),
-        padding: isExam || currentOverride ? const EdgeInsets.symmetric(vertical: 20, horizontal: 15) : null,
-        decoration: isExam || currentOverride ? BoxDecoration(
-          border: Border.all(
-            color: isExam ? AppColors.getTheme().errorRed.withValues(alpha: .5) : AppColors.getTheme().currentClassGreen.withValues(alpha: .5),
-            width: .75
-          ),
-          borderRadius: const BorderRadius.all(Radius.circular(20.0)),
-          color: isExam ? AppColors.getTheme().errorRed.withValues(alpha: .05) : AppColors.getTheme().currentClassGreen.withValues(alpha: .05)
-        ) : const BoxDecoration(
-          color: Colors.transparent
+        return;
+      }
+      if (isTask && entry.taskId != null && entry.taskId!.isNotEmpty) {
+        showDialog(
+            context: context,
+            builder: (context) {
+              return AlertDialog(
+                backgroundColor: AppColors.getTheme().rootBackground,
+                title: Text(title, style: TextStyle(color: AppColors.getTheme().textColor, fontWeight: FontWeight.bold)),
+                content: FutureBuilder<String?>(
+                  future: storage.getString('task_type_${entry.taskId}'),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const SizedBox(height: 100, child: Center(child: CircularProgressIndicator()));
+                    }
+
+                    // Offline memóriából azonnal betöltjük az adatokat!
+                    return FutureBuilder<String?>(
+                        future: storage.getString('task_res_${entry.taskId}'),
+                        builder: (context, resSnapshot) {
+                          return Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text("📚 Tárgy: ${entry.location}", style: TextStyle(color: AppColors.getTheme().textColor, fontSize: 16)),
+                              const SizedBox(height: 10),
+                              Text("📝 Típus: ${snapshot.data ?? 'Ismeretlen'}", style: TextStyle(color: AppColors.getTheme().textColor, fontSize: 16)),
+                              const SizedBox(height: 10),
+                              Text("🎯 Eredmény: ${resSnapshot.data ?? 'Nincs még kiírva'}", style: TextStyle(color: AppColors.getTheme().currentClassGreen, fontSize: 16, fontWeight: FontWeight.bold)),
+                            ],
+                          );
+                        }
+                    );
+                  },
+                ),
+                actions: [
+                  TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: Text("Bezárás", style: TextStyle(color: AppColors.getTheme().textColor))
+                  )
+                ],
+              );
+            }
+        );
+        return;
+      }
+      // HA VAN CLASSINSTANCE ID (Modern API), Akkor a mi új ablakunk jön be!
+      if (entry.classInstanceId != null && entry.classInstanceId!.isNotEmpty) {
+        showDialog(
+          context: context,
+          builder: (context) {
+            return AlertDialog(
+              backgroundColor: AppColors.getTheme().rootBackground,
+              title: Text(title, style: TextStyle(color: AppColors.getTheme().textColor, fontWeight: FontWeight.bold)),
+              content: FutureBuilder<Map<String, String>>(
+                future: api.CalendarRequest.getCourseDetails(entry.classInstanceId!),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const SizedBox(
+                      height: 100,
+                      child: Center(child: CircularProgressIndicator())
+                    );
+                  }
+                  if (snapshot.hasData) {
+                    return Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text("📍 Terem: ${snapshot.data!['room']}", style: TextStyle(color: AppColors.getTheme().textColor, fontSize: 16)),
+                        const SizedBox(height: 10),
+                        Text("👨‍🏫 Tanár: ${snapshot.data!['teacher']}", style: TextStyle(color: AppColors.getTheme().textColor, fontSize: 16)),
+                      ],
+                    );
+                  }
+                  return Text("Hiba a betöltésnél.", style: TextStyle(color: AppColors.getTheme().textColor));
+                },
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text("Bezárás", style: TextStyle(color: AppColors.getTheme().textColor))
+                )
+              ],
+            );
+          }
+        );
+      } else {
+        // Ha régi API, vagy nincs ID, a régi megszokott popup jön fel
+        TimetableCurrentlySelected.entry = entry;
+        PopupWidgetHandler(mode: 4, callback: (_) {});
+        PopupWidgetHandler.doPopup(context);
+      }
+    },
+    child: Container(
+      margin: EdgeInsets.symmetric(horizontal: 15, vertical: currentOverride ? 10 : 25),
+      padding: isExam || currentOverride ? const EdgeInsets.symmetric(vertical: 20, horizontal: 15) : null,
+      decoration: (isExam || isTask) || currentOverride ? BoxDecoration(
+        border: Border.all(
+          color: isExam ? AppColors.getTheme().errorRed.withValues(alpha: .5) :
+                 isTask ? Colors.amber.shade600.withValues(alpha: .5) :
+                 AppColors.getTheme().currentClassGreen.withValues(alpha: .5),
+          width: .75
         ),
-        child: SizedBox(
-          width: MediaQuery.of(context).size.width,
-          child: Row(
-            mainAxisSize: MainAxisSize.max,
-            children: [
-              // Leftmost position
-              Container(
-                margin: const EdgeInsets.fromLTRB(0, 0, 30, 0),
-                child: !isExam ? Text(
-                  "$position.",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: currentOverride ? AppColors.getTheme().currentClassGreen : AppColors.getTheme().onPrimaryContainer,
-                    fontWeight: FontWeight.w900,
-                    fontSize: 26.0,
-                  ),
-                  maxLines: 1,
-                ) : Icon(
-                    Icons.warning_rounded,
-                    color: AppColors.getTheme().errorRed,
-                    size: 28.0,
-                ),
-              ),
-              // Center
-              Expanded(
-                flex: 3,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.max,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: TextStyle(
-                        color: AppColors.getTheme().textColor,
-                        fontSize: 15.0,
-                        fontWeight: FontWeight.w600
-                      )
-                    ),
-                    Visibility(
-                      visible: location.trim().isNotEmpty,
-                      child: Text(
-                        location,
-                        style: TextStyle(
-                          color: isExam ? AppColors.getTheme().errorRed.withValues(alpha: .7) : AppColors.getTheme().textColor.withValues(alpha: 0.7),
-                          fontSize: 11.0,
-                          fontWeight: FontWeight.w500
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // Rightmost position
-              Expanded(
-                flex: 2,
-                child: currentOverride ? Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.timelapse_rounded,
-                      color: AppColors.getTheme().currentClassGreen,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 4),
-                    Flexible(
-                      child: Text(
-                        '${(Duration(milliseconds: endDateNormalized.millisecondsSinceEpoch - DateTime.now().millisecondsSinceEpoch)).inHours.remainder(60).toString().padLeft(2, '0')}:${((Duration(milliseconds: endDateNormalized.millisecondsSinceEpoch - DateTime.now().millisecondsSinceEpoch)).inMinutes.remainder(60)).toString().padLeft(2, '0')}',
-                        //Duration(milliseconds: entry.endEpoch - DateTime.now().millisecondsSinceEpoch).inMinutes.toString().padLeft(2, '0'),
-                        textAlign: TextAlign.right,
-                        style: TextStyle(
-                          color: AppColors.getTheme().currentClassGreen,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 14.0,
-                        ),
-                      ),
-                    ),
-                  ],
-                ) : Column(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  mainAxisSize: MainAxisSize.max,
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      displayStartTime,
-                      textAlign: TextAlign.right,
-                      style: TextStyle(
-                        color: isExam ? AppColors.getTheme().errorRed : AppColors.getTheme().onPrimaryContainer,
-                        fontWeight: FontWeight.w600,
-                        fontSize: !isExam ? 14.0 : 16.0,
-                      ),
-                    ),
-                    !isExam ?
-                    Text(
-                      displayEndTime,
-                      textAlign: TextAlign.right,
-                      style: TextStyle(
-                        color: AppColors.getTheme().onPrimary.withValues(alpha: .7),
-                        fontWeight: FontWeight.w500,
-                        fontSize: 12.0,
-                      ),
-                    ) : const SizedBox(),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        )
+        borderRadius: const BorderRadius.all(Radius.circular(20.0)),
+        color: isExam ? AppColors.getTheme().errorRed.withValues(alpha: .05) :
+               isTask ? Colors.amber.shade600.withValues(alpha: .05) :
+               AppColors.getTheme().currentClassGreen.withValues(alpha: .05)
+      ) : const BoxDecoration(
+        color: Colors.transparent
       ),
-    );
-  }*/
+      child: SizedBox(
+        width: MediaQuery.of(context).size.width,
+        child: Row(
+          mainAxisSize: MainAxisSize.max,
+          children: [
+            // BAL OLDAL: Sorszám vagy Figyelmeztető Ikon
+            Container(
+              margin: const EdgeInsets.fromLTRB(0, 0, 20, 0), // Kicsit szűkítettem a margón a nagyobb betűk miatt
+              child: (!isExam && !isTask) ? Text(
+                "$position.",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: currentOverride ? AppColors.getTheme().currentClassGreen : AppColors.getTheme().onPrimaryContainer,
+                  fontWeight: FontWeight.w900,
+                  // MEGNÖVELVE ÉS SZOROZVA
+                  fontSize: 26.0 * fontScale,
+                ),
+                maxLines: 1,
+              ) : Icon(
+                  Icons.warning_rounded,
+                  color: isExam ? AppColors.getTheme().errorRed : Colors.amber.shade600,
+                  // IKON IS SKÁLÁZÓDIK
+                  size: 28.0 * fontScale,
+              ),
+            ),
 
+            // KÖZÉP: Tantárgy neve és Terem
+            Expanded(
+              flex: 3,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.start,
+                mainAxisSize: MainAxisSize.max,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      color: AppColors.getTheme().textColor,
+                      // Alap 15.0-ról 16.0-ra növelve + szorzó
+                      fontSize: 16.0 * fontScale,
+                      fontWeight: FontWeight.w700
+                    )
+                  ),
+                  const SizedBox(height: 2), // Pici térköz
+                  Visibility(
+                    visible: entry.location.trim().isNotEmpty,
+                    child: Text(
+                      // JAVÍTVA: A "Nincs terem" kikerült a feltételből!
+                      entry.location == "Nincs megadva" || entry.location.isEmpty || entry.location == "NULL"
+                          ? "⏳ Terem betöltése..."
+                          : entry.location,
+                      style: TextStyle(
+                          color: isExam ? AppColors.getTheme().errorRed.withValues(alpha: .8) : AppColors.getTheme().textColor.withValues(alpha: 0.8),
+                          fontSize: 13.0 * fontScale,
+                          fontWeight: FontWeight.w600
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // JOBB OLDAL: Időpontok
+            Expanded(
+              flex: 2,
+              child: currentOverride ? Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.end,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.timelapse_rounded,
+                    color: AppColors.getTheme().currentClassGreen,
+                    size: 20 * fontScale, // Ikon is nő
+                  ),
+                  const SizedBox(width: 4),
+                  Flexible(
+                    child: Text(
+                      '${(Duration(milliseconds: endDateNormalized.millisecondsSinceEpoch - DateTime.now().millisecondsSinceEpoch)).inHours.remainder(60).toString().padLeft(2, '0')}:${((Duration(milliseconds: endDateNormalized.millisecondsSinceEpoch - DateTime.now().millisecondsSinceEpoch)).inMinutes.remainder(60)).toString().padLeft(2, '0')}',
+                      textAlign: TextAlign.right,
+                      style: TextStyle(
+                        color: AppColors.getTheme().currentClassGreen,
+                        fontWeight: FontWeight.w700,
+                        // Alap 14.0-ról 15.0-ra növelve + szorzó
+                        fontSize: 15.0 * fontScale,
+                      ),
+                    ),
+                  ),
+                ],
+              ) : Column(
+                mainAxisAlignment: MainAxisAlignment.end,
+                mainAxisSize: MainAxisSize.max,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    displayStartTime,
+                    textAlign: TextAlign.right,
+                    style: TextStyle(
+                      color: isExam ? AppColors.getTheme().errorRed : AppColors.getTheme().onPrimaryContainer,
+                      fontWeight: FontWeight.w700,
+                      // Alapméret megnövelve + szorzó
+                      fontSize: (!isExam ? 15.0 : 17.0) * fontScale,
+                    ),
+                  ),
+                  !isExam ?
+                  Text(
+                    displayEndTime,
+                    textAlign: TextAlign.right,
+                    style: TextStyle(
+                      color: AppColors.getTheme().onPrimary.withValues(alpha: .8),
+                      fontWeight: FontWeight.w600,
+                      // Alap 12.0-ról 13.0-ra növelve + szorzó
+                      fontSize: 13.0 * fontScale,
+                    ),
+                  ) : const SizedBox(),
+                ],
+              ),
+            ),
+          ],
+        ),
+      )
+    ),
+  );
+}
 }
 
 class FreedayElementWidget extends StatelessWidget{
@@ -472,63 +401,6 @@ class WeekoffseterElementWidget extends StatelessWidget{
   late final String displayString2;
 
   final bool isLoading;
-
-  // A SZŰRŐ ABLAK FUNKCIÓJA
-  void _showCalendarFilters(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: AppColors.getTheme().rootBackground,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (BuildContext context, StateSetter setModalState) {
-            return Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text("Naptár megjelenítése", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.getTheme().textColor)),
-                  const SizedBox(height: 10),
-                  SwitchListTile(
-                    title: Text("Órák", style: TextStyle(color: AppColors.getTheme().textColor)),
-                    activeThumbColor: AppColors.getTheme().currentClassGreen,
-                    value: storage.DataCache.getDisplayClasses() ?? true,
-                    onChanged: (val) async {
-                      await storage.DataCache.setDisplayClasses(val);
-                      setModalState(() {});
-                      homePage.onCalendarRefresh(false);
-                    },
-                  ),
-                  SwitchListTile(
-                    title: Text("Vizsgák", style: TextStyle(color: AppColors.getTheme().textColor)),
-                    activeThumbColor: AppColors.getTheme().currentClassGreen,
-                    value: storage.DataCache.getDisplayExams() ?? true,
-                    onChanged: (val) async {
-                      await storage.DataCache.setDisplayExams(val);
-                      setModalState(() {});
-                      homePage.onCalendarRefresh(false);
-                    },
-                  ),
-                  SwitchListTile(
-                    title: Text("Időszakok", style: TextStyle(color: AppColors.getTheme().textColor)),
-                    activeThumbColor: AppColors.getTheme().currentClassGreen,
-                    value: storage.DataCache.getDisplayPeriods() ?? true,
-                    onChanged: (val) async {
-                      await storage.DataCache.setDisplayPeriods(val);
-                      setModalState(() {});
-                      homePage.onCalendarRefresh(false);
-                    },
-                  ),
-                ],
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -604,12 +476,6 @@ class WeekoffseterElementWidget extends StatelessWidget{
                         onPressed: week >= 52 || !canDoPaging ? null : onForwardPressed,
                         icon: const Icon(Icons.arrow_forward_rounded)
                     ),
-                    // ITT A SZŰRŐ GOMB:
-                    IconButton(
-                      onPressed: () => _showCalendarFilters(context),
-                      icon: const Icon(Icons.tune_rounded), // vagy filter_alt_rounded
-                      color: AppColors.getTheme().textColor.withValues(alpha: 0.8),
-                    ),
                   ],
                 ),
               ),
@@ -641,156 +507,3 @@ class WeekoffseterElementWidget extends StatelessWidget{
     );
   }
 }
-
-
-/*
-class WeekoffseterElementWidget extends StatelessWidget{
-  final HomePageState homePage;
-
-  WeekoffseterElementWidget({super.key, required this.week, required this.from, required this.to, required this.onBackPressed, required this.onForwardPressed, required this.canDoPaging, required this.homePage, required this.isLoading}){
-    final startMonth = from != null ? api.Generic.monthToText(from!.month) : "_";
-    final startDay = from != null ? from!.day : "";
-
-    final endMonth = api.Generic.monthToText(to.month);
-    final endDay = to.day;
-
-    displayString = AppStrings.getStringWithParams(AppStrings.getLanguagePack().calendarPage_weekNav_StudyWeek, [week]);
-
-    if(isLoading){
-      displayString2 = AppStrings.getLanguagePack().calendarPage_weekNav_ClassesThisWeekLoading;
-      return;
-    }
-
-    if(startMonth == "_"){
-      displayString2 = AppStrings.getLanguagePack().calendarPage_weekNav_ClassesThisWeekEmpty;
-      return;
-    }
-    if("$startMonth $startDay" == "$endMonth $endDay"){
-      displayString2 = AppStrings.getStringWithParams(AppStrings.getLanguagePack().calendarPage_weekNav_ClassesThisWeekOneDay, [endMonth, endDay, api.Generic.dayToText(to.weekday)]);
-    }
-    else{
-      displayString2 = AppStrings.getStringWithParams(AppStrings.getLanguagePack().calendarPage_weekNav_ClassesThisWeekFull, [startMonth, startDay, endMonth, endDay]);
-    }
-  }
-
-  final bool canDoPaging;
-
-  final int week;
-  final DateTime? from;
-  final DateTime to;
-
-  final Callback onBackPressed;
-  final Callback onForwardPressed;
-
-  late final String displayString;
-  late final String displayString2;
-
-  final bool isLoading;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onHorizontalDragStart: (_){
-        homePage.calendarWeekCanNavigate = true;
-        homePage.calendarWeekSwitchValue = 0.0;
-      },
-      onHorizontalDragEnd: (_){
-        homePage.calendarWeekCanNavigate = false;
-        homePage.calendarWeekSwitchValue = 0.0;
-      },
-      onHorizontalDragUpdate: (e){
-        if(!homePage.calendarWeekCanNavigate || !canDoPaging){
-          return;
-        }
-        if(homePage.calendarWeekSwitchValue < -20 && week < 52){
-          if(homePage.weeksSinceStart + 1 > 52){
-            homePage.calendarWeekCanNavigate = false;
-            homePage.calendarWeekSwitchValue = 0.0;
-            return;
-          }
-          //homePage.calendarWeekCanNavigate = false;
-          homePage.calendarWeekSwitchValue = -5.0;
-          onForwardPressed();
-          return;
-        }
-        else if(homePage.calendarWeekSwitchValue > 20 && week > 1){
-          if(homePage.weeksSinceStart - 1 < 1){
-            homePage.calendarWeekCanNavigate = false;
-            homePage.calendarWeekSwitchValue = 0.0;
-            return;
-          }
-          //homePage.calendarWeekCanNavigate = false;
-          homePage.calendarWeekSwitchValue = 5.0;
-          onBackPressed();
-          return;
-        }
-        homePage.calendarWeekSwitchValue += e.delta.dx;
-      },
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 30, vertical: 2),
-        color: Colors.black.withValues(alpha: 0.01),
-        child: SizedBox(
-          width: MediaQuery.of(context).size.width,
-          child: Column(
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 16),
-                margin: const EdgeInsets.only(top: 3),
-                decoration: BoxDecoration(
-                  color: AppColors.getTheme().textColor.withValues(alpha: 0.03),
-                  borderRadius: BorderRadius.circular(21),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.max,
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    IconButton(
-                      onPressed: week <= 1 || !canDoPaging ? null : onBackPressed,
-                      icon: const Icon(Icons.arrow_back_rounded),
-                    ),
-                    Expanded(
-                      child: Text(
-                        displayString,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: AppColors.getTheme().textColor,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 16.0,
-                        ),
-                      ),
-                    ),
-                    IconButton(
-                      onPressed: week >= 52 || !canDoPaging ? null : onForwardPressed,
-                      icon: const Icon(Icons.arrow_forward_rounded)
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 16),
-                margin: const EdgeInsets.only(bottom: 3),
-                decoration: BoxDecoration(
-                  color: AppColors.getTheme().textColor.withValues(alpha: 0.03),
-                  borderRadius: BorderRadius.only(bottomRight: Radius.circular(12), bottomLeft: Radius.circular(12)),
-                ),
-                child: EmojiRichText(
-                  text: displayString2,
-                  defaultStyle: TextStyle(
-                    color: AppColors.getTheme().textColor.withValues(alpha: .6),
-                    fontWeight: FontWeight.w300,
-                    fontSize: 12.0,
-                  ),
-                  emojiStyle: TextStyle(
-                      color: AppColors.getTheme().textColor,
-                      fontSize: 12.0,
-                      fontFamily: "Noto Color Emoji"
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}*/

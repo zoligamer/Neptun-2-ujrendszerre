@@ -129,6 +129,13 @@ class DataCache{
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     return prefs.getBool(key);
   }
+  static double getFontScale() {
+    return _prefs?.getDouble('FontScale') ?? 1.0;
+  }
+
+  static Future<void> setFontScale(double scale) async {
+    await _prefs?.setDouble('FontScale', scale);
+  }
 
   late bool? _persistentSetting_familyFriendlyLoadingComments = false;
   late bool? _persistentSetting_showExamNotifications = true;

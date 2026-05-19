@@ -32,6 +32,7 @@ import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 import '../Pages/startup_page.dart' as root_page;
+import '../Misc/app_drawer.dart';
 
 class HomePage extends StatefulWidget{
   const HomePage({super.key});
@@ -288,12 +289,6 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin{
             ),);
           });
           await fetchMails(force: true);
-          /*mailList.add(Container(
-            height: 1,
-            width: MediaQuery.of(context).size.width,
-            margin: const EdgeInsets.symmetric(horizontal: 30),
-            color: Colors.white.withOpacity(.3),
-          ));*/
           setupMails(clear: true);
         }).whenComplete((){
           currentMailLoadingDebounce = false;
@@ -373,11 +368,6 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin{
       if(pinfo.installerStore != 'com.android.vending'){ // cant rate
         return;
       }
-
-      /*await storage.DataCache.setAnalyticsRateNudgedAmount(0);
-      await storage.DataCache.setAnalyticsHasRatedApp(0);
-      await storage.DataCache.setAnalyticsNextRatePopupTime(0);*/
-
       if(storage.DataCache.getAnalyticsNextRatePopupTime()! == 0){
         final appUsedDays = Duration(milliseconds: DateTime.now().millisecondsSinceEpoch - storage.DataCache.getAnalyticsFirstAppOpenTime()!).inDays;
         await storage.DataCache.setAnalyticsNextRatePopupTime(DateTime.now().add(Duration(days: 2 + (appUsedDays > 30 ? 10 : appUsedDays / 3).round())).millisecondsSinceEpoch);
@@ -412,59 +402,6 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin{
         _fbPosY = size.height - 140;
       });
     });
-/*
-    Future.delayed(Duration(seconds: 5), ()async{
-      final hasConnection = storage.DataCache.getHasNetwork();
-      final isLoggedIn = storage.DataCache.getHasLogin()!;
-
-      if(!hasConnection || !isLoggedIn){
-        return;
-      }
-
-      final username = storage.DataCache.getUsername()!;
-      final password = storage.DataCache.getPassword()!;
-      final url = storage.DataCache.getInstituteUrl()!;
-
-      final result = await api.InstitutesRequest.validateLoginCredentialsUrl(url, username, password);
-
-      if(result == 1){
-        // Siker: A munkamenet még mindig érvényes
-        return;
-      }
-      else if(result == 2){
-        // 2FA szükséges: Lejárt a token, a Neptun újra kéri a 6 jegyű kódot
-        PopupWidgetHandler(
-            mode: 9,
-            callback: (kod) async {
-              // JAVÍTVA: Hozzáadva az InstitutesRequest és a .toString()
-              String usr = storage.DataCache.getUsername() ?? "";
-              String pwd = storage.DataCache.getPassword() ?? "";
-              bool isOk = await api.InstitutesRequest.submitTwoFactorCode(usr, pwd, kod.toString());
-              if (isOk) {
-                PopupWidgetHandler.closePopup(context);
-                return; // Sikerült megújítani a munkamenetet!
-              } else {
-                PopupWidgetHandler.closePopup(context);
-                userUnavailableAccountLogout(); // Rossz 2FA kód -> kijelentkeztetés
-              }
-            },
-            onCloseCallback: (){
-              userUnavailableAccountLogout(); // Ha bezárja (X-eli) a 2FA ablakot -> kijelentkeztetés
-            }
-        );
-        PopupWidgetHandler.doPopup(context);
-        return;
-      }
-
-      // 0-ás eset: Hibás jelszó / fiók letiltva / jelszó megváltozott
-      PopupWidgetHandler(mode: 6, callback: (_){
-        userUnavailableAccountLogout();
-      }, onCloseCallback: (){
-        userUnavailableAccountLogout();
-      });
-      PopupWidgetHandler.doPopup(context);
-    });
-*/
     AppColors.clearThemeChangeCallbacks();
     AppColors.subThemeChangeCallback((){
       if(!mounted){
@@ -481,32 +418,6 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin{
         onMailRefresh();
       });
     });
-
-    /*
-    debug.log(AppPalette.toJson(AppPalette('Forest',
-        primary: Color.fromRGBO(0x7A, 0x84, 0x73, 1.0),
-        onPrimary: Color.fromRGBO(0xD9, 0xCD, 0xC8, 1.0),
-        onPrimaryContainer: Color.fromRGBO(0xA1, 0xA7, 0x98, 1.0),
-        secondary: Color.fromRGBO(0x4D, 0x55, 0x46, 1.0),
-        onSecondary: Color.fromRGBO(0xB2, 0xAA, 0xA6, 1.0),
-        onSecondaryContainer: Color.fromRGBO(0x6C, 0x73, 0x60, 1.0),
-        grade1: Color.fromRGBO(0xDD, 0x62, 0x62, 1.0),
-        grade2: Color.fromRGBO(0xD4, 0x9C, 0x9C, 1.0),
-        grade3: Color.fromRGBO(0xD5, 0xD0, 0x9D, 1.0),
-        grade4: Color.fromRGBO(0xA6, 0xB6, 0x95, 1.0),
-        grade5: Color.fromRGBO(0x93, 0xAE, 0x94, 1.0),
-        navbarStatusBarColor: Color.fromRGBO(0x17, 0x18, 0x17, 1.0),
-        navbarNavibarColor: Color.fromRGBO(0x1E, 0x1F, 0x1E, 1.0),
-        rootBackground: Color.fromRGBO(0x20, 0x22, 0x20, 1.0),
-        textColor: Color.fromRGBO(0xDF, 0xD4, 0xCF, 1.0),
-        buttonEnabled: Color.fromRGBO(0x30, 0x35, 0x28, 1.0),
-        buttonDisabled: Color.fromRGBO(0x20, 0x24, 0x1D, 1.0),
-        errorRed: Color.fromRGBO(0xC8, 0x8D, 0x8D, 1.0),
-        currentClassGreen: Color.fromRGBO(0x75, 0xB3, 0x6D, 1.0),
-        basedOnDark: true
-    )));
-    debug.log(Color.fromRGBO(0x70, 0x93, 0x53, 1.0).value.toString());
-    */
   }
 
   void userUnavailableAccountLogout(){
@@ -1007,9 +918,6 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin{
   }
 
   void _fillOneCalendarElement(BuildContext context, List<Widget> w, String name, bool isLoading){
-    /*if(!isLoading && w.isEmpty){
-      return;
-    }*/
     calendarTabs.add(Container(
       padding: const EdgeInsets.symmetric(horizontal: 15),
       child: Tab(
@@ -1388,9 +1296,6 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin{
         );
       }
       else if(item.partofSemester != prevSemester){
-        /*periodList.add(
-          _getSeparatorLine('${prevSemester + 1}. félév')
-        );*/
         prevSemester = item.partofSemester;
       }
       if(!item.isActive){ // exclude today
@@ -1527,9 +1432,6 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin{
           });
         });
       },));
-      /*if(!item.isRead){
-        unreadMailCount++;
-      }*/
     }
   }
 
@@ -1546,21 +1448,8 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin{
 
   Future<List<api.CalendarEntry>> fetchCalendarToList(int offset) async{
     //final userOffset = storage.DataCache.getUserWeekOffset()!;
-    final request = await api.CalendarRequest.makeCalendarRequest(api.CalendarRequest.getCalendarOneWeekJSON(storage.DataCache.getUsername()!, storage.DataCache.getPassword()!, currentWeekOffset + offset/* + isWeekend + userOffset*/));
+    final request = await api.CalendarRequest.makeCalendarRequest(api.CalendarRequest.getCalendarOneWeekJSON(storage.DataCache.getUsername()!, storage.DataCache.getPassword()!, currentWeekOffset + offset));
     final list = api.CalendarRequest.getCalendarEntriesFromJSON(request);
-    /*final List<api.CalendarEntry> list2 = [];
-    for(var item in list){
-      bool duplicate = false;
-      for(var item2 in list2){
-        if(item.isIdentical(item2)){
-          duplicate = true;
-          break;
-        }
-      }
-      if(!duplicate){
-        list2.add(item);
-      }
-    }*/
     //return list2;
     return list;
   }
@@ -1605,6 +1494,11 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin{
         calendarEntries.add(api.CalendarEntry('0', '0', 'NULL', 'NULL', false).fillWithExisting(calEntry!));
       }
       storage.DataCache.setHasCachedFirstWeekEpoch(1);
+      //auto get details
+      api.CalendarRequest.fillMissingDetails(calendarEntries, () {
+        if (mounted) setState(() {});
+      });
+
       Future.delayed(Duration.zero,()async{
         await _setupClassesNotifications(_classesNotificationList);
       });
@@ -1613,24 +1507,18 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin{
     //otherwise, just fetch again
     //final isWeekend = DateTime.now().weekday == DateTime.saturday || DateTime.now().weekday == DateTime.sunday ? 1 : 0;
     //final userOffset = storage.DataCache.getUserWeekOffset()!;
-    final request = await api.CalendarRequest.makeCalendarRequest(api.CalendarRequest.getCalendarOneWeekJSON(storage.DataCache.getUsername()!, storage.DataCache.getPassword()!, currentWeekOffset/* + isWeekend + userOffset*/));
+    final request = await api.CalendarRequest.makeCalendarRequest(api.CalendarRequest.getCalendarOneWeekJSON(storage.DataCache.getUsername()!, storage.DataCache.getPassword()!, currentWeekOffset));
     calendarEntries.clear();
     final list = api.CalendarRequest.getCalendarEntriesFromJSON(request);
-    /*final List<api.CalendarEntry> list2 = [];
-    for(var item in list){
-      bool duplicate = false;
-      for(var item2 in list2){
-        if(item.isIdentical(item2)){
-          //duplicate = true;
-          //break;
-        }
-      }
-      if(!duplicate){
-        list2.add(item);
-      }
-    }*/
     //calendarEntries = list2;
     calendarEntries = list;
+
+    //automatic room finder lol
+    api.CalendarRequest.fillMissingDetails(calendarEntries, () {
+      if (mounted) setState(() {});
+    });
+    //autofinder end
+
     if(currentWeekOffset == 1) {
       storage.saveInt('CachedCalendarLength', calendarEntries.length);
       //cache calendar
@@ -1943,17 +1831,6 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin{
 
     final timepassSinceSepOne = Duration(milliseconds: (yearlessNow.millisecondsSinceEpoch - sepOne.millisecondsSinceEpoch));
     final weeksPassed = timepassSinceSepOne.inDays / 7;
-    //final isWeekend = /*now.weekday == DateTime.saturday || */now.weekday == DateTime.sunday ? 1 : 0;
-
-    /*
-    // Find the most recent Monday on or before the current date
-    final mondayOffset = (now.weekday - 1) % 7;
-    final monday = now.subtract(Duration(days: mondayOffset));
-
-    final elapsedWeeks = (monday.difference(sepOne).inDays / 7).floor();
-
-    return elapsedWeeks + currentWeekOffset - 1 + isWeekend;*/
-
     final userOffset = storage.DataCache.getUserWeekOffset()!;
     return ((weeksPassed.floor() % 52) + (currentWeekOffset + userOffset));// - isWeekend;// + isWeekend;
   }
@@ -2052,13 +1929,6 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin{
             visible: currentView == 4,
             child: MailsPageWidget(homePage: this),
           ),
-          /*GestureDetector(
-            onLongPress: (){
-              AppHaptics.lightImpact();
-              final val = currentView + 1 > HomePageState.maxBottomNavWidgets - 1 ? 0 : currentView + 1;
-              switchView(val);
-            },
-          ),*/
           Visibility(
             visible: currentView == 0 && currentWeekOffset != 1 && canDoCalendarPaging && !keepHomeButtonHidden,
             child: GestureDetector(
@@ -2149,6 +2019,10 @@ class CalendarPageWidget extends StatelessWidget{
   @override
   Widget build(BuildContext context){
     return Scaffold(
+      drawer: AppDrawer(
+          loggedInUsername: storage.DataCache.getUsername()!,
+          loggedInURL: storage.DataCache.getInstituteUrl()!.replaceAll(RegExp(r'/hallgato/MobileService\.svc'), '').replaceAll("https://", '')
+      ),
       body: Stack(
         children: [
           Column(
@@ -2210,19 +2084,6 @@ class CalendarPageWidget extends StatelessWidget{
   }
 }
 
-/*class _FloatingButtonOffset extends FloatingActionButtonLocation{
-  final double offsetY;
-  final double offsetX;
-  _FloatingButtonOffset({required this.offsetX, required this.offsetY});
-
-  @override
-  Offset getOffset(ScaffoldPrelayoutGeometry scaffoldGeometry) {
-    final double x = (scaffoldGeometry.scaffoldSize.width - scaffoldGeometry.floatingActionButtonSize.width) / offsetX;
-    final double y = scaffoldGeometry.scaffoldSize.height - scaffoldGeometry.floatingActionButtonSize.height / offsetY;
-    return Offset(x, y);
-  }
-}*/
-
 class MarkbookPageWidget extends StatelessWidget{
   final HomePageState homePage;
   final int totalCredits;
@@ -2265,7 +2126,7 @@ class MarkbookPageWidget extends StatelessWidget{
               return Transform.translate(
                 offset: Offset(
                     confetti.startOffset.dx + confetti.offsetMultiplier * homePage._confettiAnimation.value,
-                    lerpDouble(confetti.startOffset.dy, confetti.startOffset.dy + MediaQuery.of(context).size.height * 2 + (confetti.offsetMultiplier < 0 ? -confetti.offsetMultiplier : confetti.offsetMultiplier) * 6 /*3d effect*/ * homePage._confettiAnimation.value, homePage._confettiAnimation.value)!
+                    lerpDouble(confetti.startOffset.dy, confetti.startOffset.dy + MediaQuery.of(context).size.height * 2 + (confetti.offsetMultiplier < 0 ? -confetti.offsetMultiplier : confetti.offsetMultiplier) * 6 * homePage._confettiAnimation.value, homePage._confettiAnimation.value)!
                 ),
                 child: Transform.rotate(
                   angle: confetti.startRotation + confetti.rotationMultiplier * homePage._confettiAnimation.value,
@@ -2445,7 +2306,6 @@ class PaymentsPageWidget extends StatelessWidget{
           Column(
             mainAxisAlignment: MainAxisAlignment.start,
             children: <Widget>[
-              //topnav.TopNavigatorWidget(homePage: homePage, displayString: "Befizetendők", smallHintText: "$totalMoney Ft Van A Számládon 💸"),
               topnav.TopNavigatorWidget(homePage: homePage, displayString: AppStrings.getLanguagePack().view_header_Payments, smallHintText: AppStrings.getStringWithParams(AppStrings.getLanguagePack().topheader_payments_TotalMoneySpent, [totalMoney]), loggedInUsername: storage.DataCache.getUsername()!, loggedInURL: storage.DataCache.getInstituteUrl()!.replaceAll(RegExp(r'/hallgato/MobileService\.svc'), '').replaceAll("https://", '')),
               HomePageState.getSeparatorLine(context),
               Expanded(
@@ -2511,19 +2371,6 @@ class PeriodsPageWidget extends StatelessWidget{
     homePage.onPeriodsRefresh();
   }
 
-  /*String aOrAzDeterminer(int semester){
-    switch(semester){
-      case 0:
-        return '';
-      case 1:
-        return 'az';
-      case 5:
-        return 'az';
-      default:
-        return 'A';
-    }
-  }*/
-
   @override
   Widget build(BuildContext context){
     return Scaffold(
@@ -2532,7 +2379,6 @@ class PeriodsPageWidget extends StatelessWidget{
             Column(
               mainAxisAlignment: MainAxisAlignment.start,
               children: <Widget>[
-                //topnav.TopNavigatorWidget(homePage: homePage, displayString: "Időszakok", smallHintText: "Jelenleg ${currentSemester != -1 ? "${aOrAzDeterminer(currentSemester)} $currentSemester." : "gondolkodunk mi is van..."} ${currentSemester != -1 ? 'félév van' : ''} 🗓️", loggedInUsername: storage.DataCache.getUsername()!, loggedInURL: storage.DataCache.getInstituteUrl()!.replaceAll(RegExp(r'/hallgato/MobileService\.svc'), '').replaceAll("https://", '')),
                 topnav.TopNavigatorWidget(homePage: homePage, displayString: AppStrings.getLanguagePack().view_header_Periods, smallHintText: AppStrings.getStringWithParams(AppStrings.getLanguagePack().topheader_periods_MainHeader, [homePage.countActivePeriods, AppStrings.getLanguagePack().topheader_periods_ActiveText, homePage.countFuturePeriods, AppStrings.getLanguagePack().topheader_periods_FutureText, homePage.countExpiredPeriods, AppStrings.getLanguagePack().topheader_periods_ExpiredText]), loggedInUsername: storage.DataCache.getUsername()!, loggedInURL: storage.DataCache.getInstituteUrl()!.replaceAll(RegExp(r'/hallgato/MobileService\.svc'), '').replaceAll("https://", '')),
                 HomePageState.getSeparatorLine(context),
                 Expanded(
