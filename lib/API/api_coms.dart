@@ -575,8 +575,8 @@ class CalendarRequest {
     }
 
     bool didUpdateUI = false;
-
-    for (var entry in entries) {
+    // Régi: for (var entry in entries) {
+    for (var entry in entries.toList()) {
       if (entry.isTask && entry.taskId != null && entry.taskId!.isNotEmpty) {
         final cachedSubject = await storage.getString('task_sub_${entry.taskId}');
 

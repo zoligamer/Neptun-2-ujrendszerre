@@ -498,21 +498,19 @@ class AppStrings{
     final downloadedSupportedLanguages = DataCache.getDownloadedSupportedLanguages();
     final List<String> converted = DataCache.getDownloadedSupportedLanguagesData();
     for(int i = 0; i < downloadedSupportedLanguages.length; i++){
-      await Future.delayed(Duration.zero, (){
-        LanguagePack.fromJson(downloadedSupportedLanguages[i], converted[i], ()async{
-          if(!DataCache.getHasNetwork()){
-            return;
-          }
-          await Language.getLanguagePackById(await Language.getAllLanguages(), downloadedSupportedLanguages[i]); // redownload language
-          _loadDownloadLangTimer.cancel();
-          _loadDownloadLangTimer = Timer(const Duration(seconds: 3), (){
-            saveDownloadedLanguageData(); // save after all langs have been fetched
-            Navigator.popUntil(context, (route) => route.willHandlePopInternally);
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const Splitter()),
-            );
-          });
+      LanguagePack.fromJson(downloadedSupportedLanguages[i], converted[i], ()async{
+        if(!DataCache.getHasNetwork()){
+          return;
+        }
+        await Language.getLanguagePackById(await Language.getAllLanguages(), downloadedSupportedLanguages[i]);
+        _loadDownloadLangTimer.cancel();
+        _loadDownloadLangTimer = Timer(const Duration(seconds: 3), (){
+          saveDownloadedLanguageData();
+          Navigator.popUntil(context, (route) => route.willHandlePopInternally);
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const Splitter()),
+          );
         });
       });
     }
@@ -1358,6 +1356,7 @@ class LanguageManager{
     PopupWidgetHandler(mode: 8, callback: (_)async{
       final idx = AppStrings.getAllLangCodes().indexOf(deviceLang);
       await DataCache.setUserSelectedLanguage(idx);
+      AppStrings.initialize();
       Navigator.popUntil(context, (route) => route.willHandlePopInternally);
       Navigator.push(context, MaterialPageRoute(builder: (context) => const Splitter()));
     });

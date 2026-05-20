@@ -1,5 +1,4 @@
 import 'dart:async';
-//import 'dart:developer';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -41,7 +40,7 @@ class PopupWidgetHandler{
 
   AnimationController? widgetAnimController;
 
-  static Duration animDuration = Duration(milliseconds: 350);
+  static Duration animDuration = const Duration(milliseconds: 350);
 
   PopupWidgetHandler({required this.mode, required this.callback, this.onCloseCallback}){
     if(_hasPopupActive){
@@ -66,7 +65,7 @@ class PopupWidgetHandler{
 
     _instance!._settingsThemesPrevious = DataCache.getPreferredAppTheme();
     _instance!._settingsThemesCurrent = DataCache.getPreferredAppTheme();
-    //_instance!.homePage.setBlurComplex(true);
+
     if(blur == null){
       HomePageState.showBlurPopup(true);
     }
@@ -75,12 +74,13 @@ class PopupWidgetHandler{
     }
     AppHaptics.lightImpact();
 
-    Future<PackageInfo>.delayed(Duration.zero, ()async{
-      return await PackageInfo.fromPlatform();
-    }).then((value){
+    Future.wait([
+      PackageInfo.fromPlatform(),
+      Language.getAllLanguages(),
+    ]).then((values){
       Navigator.of(context).push(
           PageRouteBuilder(
-              pageBuilder: (context, anim, anim2) => PopupWidgetState(topPadding: MediaQuery.of(context).padding, mode: _instance!.mode, pinfo: value),
+              pageBuilder: (context, anim, anim2) => PopupWidgetState(topPadding: MediaQuery.of(context).padding, mode: _instance!.mode, pinfo: values[0] as PackageInfo),
               opaque: false,
               barrierDismissible: true,
               transitionDuration: PopupWidgetHandler.animDuration,
@@ -94,30 +94,6 @@ class PopupWidgetHandler{
     });
   }
 
-  /*static Widget animateTransition(Animation<double> anim1, Widget widget, BuildContext context){
-    if(!_instance!.hasListener){
-      _instance!.hasListener = true;
-      anim1.addStatusListener((status) {
-        if(anim1.isCompleted){
-          _instance!.pwidget = null;
-          _instance!.animValue = 1.0;
-        }
-      });
-    }
-
-    var curve = _instance!._inUse ? Curves.easeInOutCubicEmphasized : Curves.ease;
-    var tween = Tween<double>(begin: 0.0, end: 1.0).chain(
-      CurveTween(curve: curve),
-    );
-
-    var scaleAnimation = anim1.drive(tween);
-    _instance!.animValue = scaleAnimation.value;
-    if(_instance!.pwidget == null){
-      return widget;
-    }
-    return _instance!.pwidget!.getPopup(_instance!.animValue, context);
-  }*/
-
   static closePopup(BuildContext context){
     if(!_instance!._inUse){
       return;
@@ -126,10 +102,10 @@ class PopupWidgetHandler{
     if(_instance!.widgetAnimController != null){
       _instance!.widgetAnimController!.reverse(from: 1).whenComplete((){
         PopupWidgetHandler._hasPopupActive = false;
-        Future.delayed(Duration.zero, (){ // needed, so when the user spams the back button, the app doesnt get a brainfuck, and turns black
+        Future.delayed(Duration.zero, (){
           Navigator.of(context).pop();
         });
-        if(_instance!._settingsLanguageCurrent != _instance!._settingsLanguagePrevious /*|| _instance!._settingsThemesCurrent != _instance!._settingsThemesPrevious*/){
+        if(_instance!._settingsLanguageCurrent != _instance!._settingsLanguagePrevious || _instance!._settingsThemesCurrent != _instance!._settingsThemesPrevious){
           Navigator.popUntil(context, (route) => route.willHandlePopInternally);
           Navigator.push(
             context,
@@ -173,14 +149,18 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
   GlobalKey _languageDropdownGlobalKey = GlobalKey();
   GlobalKey _themesDropdownGlobalKey = GlobalKey();
 
+  double _currentFontScale = 1.0; // ITT VAN A HELYES HELYEN
+
   @override
   void initState() {
     super.initState();
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
       statusBarIconBrightness: AppColors.isDarktheme() ? Brightness.light : Brightness.dark,
-      systemNavigationBarColor: AppColors.getTheme().navbarNavibarColor, // navigation bar color
-      statusBarColor: AppColors.getTheme().navbarStatusBarColor, // status bar color
+      systemNavigationBarColor: AppColors.getTheme().navbarNavibarColor,
+      statusBarColor: AppColors.getTheme().navbarStatusBarColor,
     ));
+
+    _currentFontScale = DataCache.getFontScale();
 
     popupController = AnimationController(
       vsync: this,
@@ -245,7 +225,7 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               physics: const BouncingScrollPhysics(
-                decelerationRate: ScrollDecelerationRate.fast
+                  decelerationRate: ScrollDecelerationRate.fast
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -266,9 +246,9 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
                     icon: Text(
                       '1',
                       style: TextStyle(
-                        color: selectionValue == -1 || selectionValue == 0 ? AppColors.getTheme().grade1 : AppColors.getTheme().grade1.withValues(alpha: .4),
-                        fontSize: 30,
-                        fontWeight: selectionValue != -1 && selectionValue == 0 ? FontWeight.w800 : FontWeight.normal
+                          color: selectionValue == -1 || selectionValue == 0 ? AppColors.getTheme().grade1 : AppColors.getTheme().grade1.withValues(alpha: .4),
+                          fontSize: 30,
+                          fontWeight: selectionValue != -1 && selectionValue == 0 ? FontWeight.w800 : FontWeight.normal
                       ),
                     ),
                     color: AppColors.getTheme().grade1,
@@ -393,6 +373,7 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
         ));
 
         return list;
+
       case 1:
         list.add(EmojiRichText(
           text: AppStrings.getLanguagePack().popup_case1_SettingsHeader,
@@ -409,6 +390,50 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
         ));
         list.add(const SizedBox(height: 3));
         list.add(Container(
+          height: 1,
+          color: AppColors.getTheme().textColor.withValues(alpha: .1),
+        ));
+        list.add(Row(
+          mainAxisSize: MainAxisSize.max,
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Expanded(flex: 2, child: Container(
+              margin: const EdgeInsets.all(10),
+              child: Text(
+                "Betűméret / Font scale",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.getTheme().textColor
+                ),
+              ),
+            )),
+            Expanded(
+              flex: 3,
+              child: Slider(
+                value: _currentFontScale,
+                min: 0.8,
+                max: 1.5,
+                divisions: 7,
+                activeColor: AppColors.getTheme().secondary,
+                inactiveColor: AppColors.getTheme().buttonDisabled,
+                thumbColor: AppColors.getTheme().textColor,
+                onChanged: (val) {
+                  setState(() {
+                    _currentFontScale = val;
+                  });
+                },
+                onChangeEnd: (val) async {
+                  await DataCache.setFontScale(val);
+                  AppColors.refreshThemeIndexing();
+                },
+              ),
+            )
+          ],
+        ));
+        list.add(Container(
           color: AppColors.getTheme().textColor.withValues(alpha: 0.3),
           margin: const EdgeInsets.symmetric(vertical: 10),
           height: 2,
@@ -424,9 +449,9 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
                 AppStrings.getLanguagePack().popup_case1_settingOption1_FamilyFriendlyLoadingText,
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.getTheme().textColor
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.getTheme().textColor
                 ),
               ),
             )),
@@ -489,8 +514,8 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
             )),
             Container(
               decoration: BoxDecoration(
-                borderRadius: const BorderRadius.all(Radius.circular(90)),
-                color: AppColors.getTheme().textColor.withValues(alpha: .06)
+                  borderRadius: const BorderRadius.all(Radius.circular(90)),
+                  color: AppColors.getTheme().textColor.withValues(alpha: .06)
               ),
               child: IconButton(
                 onPressed: (){
@@ -763,62 +788,6 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
             )
           ],
         ));
-        /*list.add(Row(
-          mainAxisSize: MainAxisSize.max,
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Expanded(flex: 2, child: Container(
-              margin: const EdgeInsets.all(10),
-              child: const Text(
-                'Appal kapcsolatos adatok küldése',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white
-                ),
-              ),
-            )),
-            Container(
-              decoration: BoxDecoration(
-                  borderRadius: const BorderRadius.all(Radius.circular(90)),
-                  color: Colors.white.withValues(alpha: .06)
-              ),
-              child: IconButton(
-                onPressed: (){
-                  _showSnackbar('Elküldi az esetleges API-val, és appal kapcsolatos problémákat / felhaszálói tevékenységeket nekem, így könnyebben ki tudom javítani a hibákat, és az app jobban fog működni neked, és másoknak is.\nCsak WIFI-n küldi, úgyhogy nem kell aggódni a mobilneted miatt.\nAz elküldött adatok névtelenek!', 24);
-                },
-                icon: Icon(
-                  Icons.question_mark_rounded,
-                  color: Colors.white.withValues(alpha: .4),
-                ),
-                enableFeedback: true,
-                iconSize: 24,
-              ),
-            ),
-            Container(
-              margin: const EdgeInsets.all(10),
-              child: Switch(
-                value: DataCache.getNeedPeriodsNotifications()!,
-                onChanged: (b){
-                  DataCache.setNeedPeriodsNotifications(b ? 1 : 0);
-                  AppHaptics.lightImpact();
-                  if(b){
-                    HomePageState.setupPeriodsNotifications();
-                  }
-                  else{
-                    HomePageState.cancelPeriodsNotifications();
-                  }
-                  if(mounted) {setState((){});}
-                },
-                activeThumbColor: Colors.white,
-                activeTrackColor: const Color.fromRGBO(0x4F, 0x69, 0x6E, 1.0),
-                hoverColor: Colors.white.withValues(alpha: .1),
-              ),
-            )
-          ],
-        ));*/
         list.add(Row(
           mainAxisSize: MainAxisSize.max,
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -861,7 +830,7 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
                 child: DropdownButtonFormField<String>(
                     key: _languageDropdownGlobalKey,
                     borderRadius: BorderRadius.circular(12),
-                    initialValue: _languageCurrSelect, // The currently selected value.
+                    initialValue: _languageCurrSelect,
                     icon: const SizedBox(),
                     style: TextStyle(
                         color: AppColors.getTheme().textColor,
@@ -931,150 +900,53 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
                         );
                       }).toList();
                     },
-                    onChanged: (String? value) {
-                      // this is not the best solution, but I dont care
-                      AppHaptics.lightImpact();
-                      if(value == null){
+                  onChanged: (String? value) async {
+                    AppHaptics.lightImpact();
+                    if (value == null) return;
+
+                    final flagWeLookFor = value.split(' ')[0];
+                    final languageIdx = AppStrings.getAllLangFlags().indexOf(flagWeLookFor);
+                    var selectedLangCode = '';
+
+                    for (var item in Language.getAllLanguagesWithNative()) {
+                      if (item.langFlag == flagWeLookFor) {
+                        selectedLangCode = item.langId;
+                        break;
+                      }
+                    }
+
+                    DataCache.setUserSelectedLanguage(languageIdx <= -1 ? AppStrings.getAllLangFlags().length : languageIdx);
+
+                    if (!AppStrings.hasLanguageDownloaded(selectedLangCode)) {
+                      if (!DataCache.getHasNetwork()) {
+                        Fluttertoast.showToast(msg: AppStrings.getLanguagePack().popup_case1_langSwap_DownloadingLangFail);
                         return;
                       }
-                      final flagWeLookFor = value.split(' ')[0];
-                      final languageIdx = AppStrings.getAllLangFlags().indexOf(flagWeLookFor);
 
-                      var selectedLangCode = '';
-                      for(var item in Language.getAllLanguagesWithNative()){
-                        if(item.langFlag == flagWeLookFor){
-                          selectedLangCode = item.langId;
-                          break;
-                        }
+                      final pack = await Language.getAllLanguages();
+                      final valuePack = await Language.getLanguagePackById(pack, selectedLangCode);
+
+                      if (valuePack != null) {
+                        AppStrings.setupPopupPreviews(valuePack);
+                        Fluttertoast.showToast(msg: AppStrings.popupLangPrev_ObtainingLang);
+                        AppStrings.saveDownloadedLanguageData();
                       }
-                      DataCache.setUserSelectedLanguage(languageIdx <= -1 ? AppStrings.getAllLangFlags().length : languageIdx);
-                      if(!AppStrings.hasLanguageDownloaded(selectedLangCode)){
-                        Future.delayed(Duration.zero, ()async{
-                          if(!DataCache.getHasNetwork()){
-                            if(Platform.isAndroid){
-                              Fluttertoast.showToast(
-                                msg: AppStrings.getLanguagePack().popup_case1_langSwap_DownloadingLangFail, // dont have the new lang, can speak with it
-                                toastLength: Toast.LENGTH_SHORT,
-                                fontSize: 14,
-                                gravity: ToastGravity.SNACKBAR,
-                                backgroundColor: AppColors.getTheme().rootBackground,
-                                textColor: AppColors.getTheme().textColor,
-                              );
-                            }
-                            return;
-                          }
-                          final pack = await Language.getAllLanguages();
-                          await Language.getLanguagePackById(pack, selectedLangCode).then((value)async{
-                            AppStrings.setupPopupPreviews(value!);
-                            if(Platform.isAndroid){
-                              Fluttertoast.showToast(
-                                msg: AppStrings.popupLangPrev_ObtainingLang,
-                                toastLength: Toast.LENGTH_SHORT,
-                                fontSize: 14,
-                                gravity: ToastGravity.SNACKBAR,
-                                backgroundColor: AppColors.getTheme().rootBackground,
-                                textColor: AppColors.getTheme().textColor
-                              );
-                            }
-                            AppStrings.saveDownloadedLanguageData();
-                            Navigator.popUntil(context, (route) => route.willHandlePopInternally);
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (context) => const Splitter()),
-                            );
-                          });
-                          return;
-                        });
-                      }
-                      setState(() {
-                        _languageCurrSelect = value;
-                        PopupWidgetHandler._instance!._settingsLanguageCurrent = AppStrings.getLanguageNamesWithFlag().indexOf(value);
-                      });
                     }
+
+                    setState(() {
+                      _languageCurrSelect = value;
+                      PopupWidgetHandler._instance!._settingsLanguageCurrent = AppStrings.getLanguageNamesWithFlag().indexOf(value);
+                    });
+
+                    Navigator.pushAndRemoveUntil(
+                      context,
+                      MaterialPageRoute(builder: (context) => const Splitter()),
+                          (route) => false,
+                    );
+                  },
                 ),
               ),
             ),
-            /*GestureDetector(
-              key: _settingsLanguageWidgetGlobalKey,
-              onTap: (){
-                if(!mounted){
-                  return;
-                }
-                AppHaptics.lightImpact();
-                showMenu(
-                  context: context,
-                  position: RelativeRect.fromLTRB(
-                    (_settingsLanguageWidgetGlobalKey.currentContext!.findRenderObject() as RenderBox).localToGlobal(Offset.zero).dx + 13,
-                    (_settingsLanguageWidgetGlobalKey.currentContext!.findRenderObject() as RenderBox).localToGlobal(Offset.zero).dy + (_settingsLanguageWidgetGlobalKey.currentContext!.findRenderObject() as RenderBox).size.height,
-                    (_settingsLanguageWidgetGlobalKey.currentContext!.findRenderObject() as RenderBox).localToGlobal(Offset.zero).dx + (_settingsLanguageWidgetGlobalKey.currentContext!.findRenderObject() as RenderBox).size.width,
-                    (_settingsLanguageWidgetGlobalKey.currentContext!.findRenderObject() as RenderBox).localToGlobal(Offset.zero).dy,
-                  ),
-                  items: AppStrings.getAllLangFlags().map<PopupMenuEntry<int>>((String value){
-                    return PopupMenuItem(
-                      value: ++_settingsLanguageItemsIdx,
-                      child: EmojiRichText(
-                        text: value,
-                        defaultStyle: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w500,
-                          fontSize: 18.0,
-                        ),
-                        emojiStyle: const TextStyle(
-                            color: Color.fromRGBO(0x8A, 0xB6, 0xBF, 1.0),
-                            fontSize: 22.0,
-                            fontFamily: "Noto Color Emoji"
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                  color: Color.fromRGBO(0x2F, 0x2F, 0x2F, 1.0)
-                ).then((val){
-                  _settingsLanguageItemsIdx = -1;
-                  if(val == null){
-                    return;
-                  }
-                  AppHaptics.lightImpact();
-                  DataCache.setUserSelectedLanguage(val);
-
-                  setState(() {
-                    PopupWidgetHandler._instance!._settingsLanguageCurrent = val;
-                  });
-                });
-              },
-              child: Container(
-                width: 120,
-                padding: const EdgeInsets.all(10),
-                margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: .05),
-                  borderRadius: const BorderRadius.all(Radius.circular(12)),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Flexible(
-                      child: EmojiRichText(
-                        text: AppStrings.getLanguagePack().language_flag,
-                        defaultStyle: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w500,
-                          fontSize: 18.0,
-                        ),
-                        emojiStyle: const TextStyle(
-                          color: Color.fromRGBO(0x8A, 0xB6, 0xBF, 1.0),
-                          fontSize: 22.0,
-                          fontFamily: "Noto Color Emoji"
-                        ),
-                      ),
-                    ),
-                    Icon(
-                      Icons.arrow_drop_down_rounded,
-                      color: Colors.white.withValues(alpha: .5),
-                    )
-                  ],
-                )
-              ),
-            )*/
           ],
         ));
         list.add(Row(
@@ -1119,7 +991,7 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
                 child: DropdownButtonFormField<String>(
                     key: _themesDropdownGlobalKey,
                     borderRadius: BorderRadius.circular(12),
-                    initialValue: _themesCurrSelect, // The currently selected value.
+                    initialValue: _themesCurrSelect,
                     icon: const SizedBox(),
                     style: TextStyle(
                         color: AppColors.getTheme().textColor,
@@ -1228,11 +1100,6 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
                             AppColors.saveDownloadedPaletteData();
                             AppColors.setUserThemeByName(value.paletteName, context);
                             AppColors.refreshThemeIndexing();
-                            /*Navigator.popUntil(context, (route) => route.willHandlePopInternally);
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (context) => const Splitter()),
-                            );*/
                           });
                           return;
                         });
@@ -1247,87 +1114,6 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
                 ),
               ),
             ),
-            /*GestureDetector(
-              key: _settingsLanguageWidgetGlobalKey,
-              onTap: (){
-                if(!mounted){
-                  return;
-                }
-                AppHaptics.lightImpact();
-                showMenu(
-                  context: context,
-                  position: RelativeRect.fromLTRB(
-                    (_settingsLanguageWidgetGlobalKey.currentContext!.findRenderObject() as RenderBox).localToGlobal(Offset.zero).dx + 13,
-                    (_settingsLanguageWidgetGlobalKey.currentContext!.findRenderObject() as RenderBox).localToGlobal(Offset.zero).dy + (_settingsLanguageWidgetGlobalKey.currentContext!.findRenderObject() as RenderBox).size.height,
-                    (_settingsLanguageWidgetGlobalKey.currentContext!.findRenderObject() as RenderBox).localToGlobal(Offset.zero).dx + (_settingsLanguageWidgetGlobalKey.currentContext!.findRenderObject() as RenderBox).size.width,
-                    (_settingsLanguageWidgetGlobalKey.currentContext!.findRenderObject() as RenderBox).localToGlobal(Offset.zero).dy,
-                  ),
-                  items: AppStrings.getAllLangFlags().map<PopupMenuEntry<int>>((String value){
-                    return PopupMenuItem(
-                      value: ++_settingsLanguageItemsIdx,
-                      child: EmojiRichText(
-                        text: value,
-                        defaultStyle: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w500,
-                          fontSize: 18.0,
-                        ),
-                        emojiStyle: const TextStyle(
-                            color: Color.fromRGBO(0x8A, 0xB6, 0xBF, 1.0),
-                            fontSize: 22.0,
-                            fontFamily: "Noto Color Emoji"
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                  color: Color.fromRGBO(0x2F, 0x2F, 0x2F, 1.0)
-                ).then((val){
-                  _settingsLanguageItemsIdx = -1;
-                  if(val == null){
-                    return;
-                  }
-                  AppHaptics.lightImpact();
-                  DataCache.setUserSelectedLanguage(val);
-
-                  setState(() {
-                    PopupWidgetHandler._instance!._settingsLanguageCurrent = val;
-                  });
-                });
-              },
-              child: Container(
-                width: 120,
-                padding: const EdgeInsets.all(10),
-                margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: .05),
-                  borderRadius: const BorderRadius.all(Radius.circular(12)),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Flexible(
-                      child: EmojiRichText(
-                        text: AppStrings.getLanguagePack().language_flag,
-                        defaultStyle: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w500,
-                          fontSize: 18.0,
-                        ),
-                        emojiStyle: const TextStyle(
-                          color: Color.fromRGBO(0x8A, 0xB6, 0xBF, 1.0),
-                          fontSize: 22.0,
-                          fontFamily: "Noto Color Emoji"
-                        ),
-                      ),
-                    ),
-                    Icon(
-                      Icons.arrow_drop_down_rounded,
-                      color: Colors.white.withValues(alpha: .5),
-                    )
-                  ],
-                )
-              ),
-            )*/
           ],
         ));
         list.add(Container(
@@ -1336,156 +1122,156 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
         ));
         list.add(const SizedBox(height: 6));
         list.add(
-          Column(
-            children: [
-              Row(
-                mainAxisSize: MainAxisSize.max,
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Expanded(flex: 4, child: Container(
-                    margin: const EdgeInsets.all(10),
-                    child: Text(
-                      AppStrings.getLanguagePack().popup_case1_settingOption7_WeekOffset,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.getTheme().textColor
-                      ),
-                    ),
-                  )),
-                  Container(
-                    decoration: BoxDecoration(
-                        borderRadius: const BorderRadius.all(Radius.circular(90)),
-                        color: AppColors.getTheme().textColor.withValues(alpha: .06)
-                    ),
-                    child: IconButton(
-                      onPressed: (){
-                        _showSnackbar(AppStrings.getLanguagePack().popup_case1_settingOption7_WeekOffsetDescription, 6);
-                        AppHaptics.attentionLightImpact();
-                      },
-                      icon: Icon(
-                        Icons.question_mark_rounded,
-                        color: AppColors.getTheme().textColor.withValues(alpha: .4),
-                      ),
-                      enableFeedback: true,
-                      iconSize: 24,
-                    ),
-                  ),
-                  const Padding(padding: EdgeInsets.only(right: 16)),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: AppColors.getTheme().textColor.withValues(alpha: .05),
-                      borderRadius: BorderRadius.all(Radius.circular(14))
-                    ),
-                    padding: const EdgeInsets.all(4),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          width: 65,
-                          child: TextField(
-                            controller: HomePageState.getUserWeekOffsetTextController(),
-                            scrollPhysics: const AlwaysScrollableScrollPhysics(),
-                            keyboardType: TextInputType.numberWithOptions(decimal: false, signed: true),
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: AppColors.getTheme().textColor,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600
-                            ),
-                            maxLines: 1,
-                            decoration: InputDecoration(
-                              isCollapsed: true,
-                              isDense: true,
-                              hintText: AppStrings.getLanguagePack().popup_case1_settingOption7_WeekOffsetAuto,
-                              hintStyle: TextStyle(
-                                  color: AppColors.getTheme().textColor.withValues(alpha: .4),
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w400
-                              ),
-                              border: OutlineInputBorder(
-                                borderSide: BorderSide.none,
-                                borderRadius: BorderRadius.only(topLeft: Radius.circular(12), bottomLeft: Radius.circular(12))
-                              ),
-                              contentPadding: const EdgeInsets.all(6),
-                              filled: false,
-                            )
-                          ),
+            Column(
+              children: [
+                Row(
+                  mainAxisSize: MainAxisSize.max,
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Expanded(flex: 4, child: Container(
+                      margin: const EdgeInsets.all(10),
+                      child: Text(
+                        AppStrings.getLanguagePack().popup_case1_settingOption7_WeekOffset,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.getTheme().textColor
                         ),
-                        Column(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            SizedBox(
-                              width: 26,
-                              height: 26,
-                              child: GestureDetector(
-                                onLongPressStart: (_){
-                                  HomePageState.settingsUserWeekOffsetPeriodicLooper = Timer.periodic(Duration(milliseconds: 100), (timer) {
-                                    AppHaptics.lightImpact();
-                                    HomePageState.settingsUserWeekOffsetAdd(1);
-                                  });
-                                },
-                                onLongPressEnd: (_){
-                                  HomePageState.settingsUserWeekOffsetPeriodicLooper!.cancel();
-                                  HomePageState.settingsUserWeekOffsetPeriodicLooper = null;
-                                },
-                                child: IconButton(
-                                  onPressed: () {
-                                    AppHaptics.lightImpact();
-                                    HomePageState.settingsUserWeekOffsetAdd(1);
-                                  },
-                                  icon: Icon(
-                                    Icons.arrow_drop_up_rounded,
-                                    color: AppColors.getTheme().textColor.withValues(alpha: .5),
-                                    size: 16,
-                                  ),
-                                  padding: EdgeInsets.zero,
-                                  constraints: const BoxConstraints(),
-                                ),
-                              ),
-                            ),
-                            SizedBox(
-                              width: 26,
-                              height: 26,
-                              child: GestureDetector(
-                                onLongPressStart: (_){
-                                  HomePageState.settingsUserWeekOffsetPeriodicLooper = Timer.periodic(Duration(milliseconds: 100), (timer) {
-                                    AppHaptics.lightImpact();
-                                    HomePageState.settingsUserWeekOffsetAdd(-1);
-                                  });
-                                },
-                                onLongPressEnd: (_){
-                                  HomePageState.settingsUserWeekOffsetPeriodicLooper!.cancel();
-                                  HomePageState.settingsUserWeekOffsetPeriodicLooper = null;
-                                },
-                                child: IconButton(
-                                  onPressed: () {
-                                    AppHaptics.lightImpact();
-                                    HomePageState.settingsUserWeekOffsetAdd(-1);
-                                  },
-                                  icon: Icon(
-                                    Icons.arrow_drop_down_rounded,
-                                    color: AppColors.getTheme().textColor.withValues(alpha: .5),
-                                    size: 16,
-                                  ),
-                                  padding: EdgeInsets.zero,
-                                  constraints: const BoxConstraints(),
-                                ),
-                              ),
-                            ),
-                          ],
-                        )
-                      ],
+                      ),
+                    )),
+                    Container(
+                      decoration: BoxDecoration(
+                          borderRadius: const BorderRadius.all(Radius.circular(90)),
+                          color: AppColors.getTheme().textColor.withValues(alpha: .06)
+                      ),
+                      child: IconButton(
+                        onPressed: (){
+                          _showSnackbar(AppStrings.getLanguagePack().popup_case1_settingOption7_WeekOffsetDescription, 6);
+                          AppHaptics.attentionLightImpact();
+                        },
+                        icon: Icon(
+                          Icons.question_mark_rounded,
+                          color: AppColors.getTheme().textColor.withValues(alpha: .4),
+                        ),
+                        enableFeedback: true,
+                        iconSize: 24,
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            ],
-          )
+                    const Padding(padding: EdgeInsets.only(right: 16)),
+                    Container(
+                      decoration: BoxDecoration(
+                          color: AppColors.getTheme().textColor.withValues(alpha: .05),
+                          borderRadius: const BorderRadius.all(Radius.circular(14))
+                      ),
+                      padding: const EdgeInsets.all(4),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          SizedBox(
+                            width: 65,
+                            child: TextField(
+                                controller: HomePageState.getUserWeekOffsetTextController(),
+                                scrollPhysics: const AlwaysScrollableScrollPhysics(),
+                                keyboardType: const TextInputType.numberWithOptions(decimal: false, signed: true),
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                    color: AppColors.getTheme().textColor,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600
+                                ),
+                                maxLines: 1,
+                                decoration: InputDecoration(
+                                  isCollapsed: true,
+                                  isDense: true,
+                                  hintText: AppStrings.getLanguagePack().popup_case1_settingOption7_WeekOffsetAuto,
+                                  hintStyle: TextStyle(
+                                      color: AppColors.getTheme().textColor.withValues(alpha: .4),
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w400
+                                  ),
+                                  border: const OutlineInputBorder(
+                                      borderSide: BorderSide.none,
+                                      borderRadius: BorderRadius.only(topLeft: Radius.circular(12), bottomLeft: Radius.circular(12))
+                                  ),
+                                  contentPadding: const EdgeInsets.all(6),
+                                  filled: false,
+                                )
+                            ),
+                          ),
+                          Column(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              SizedBox(
+                                width: 26,
+                                height: 26,
+                                child: GestureDetector(
+                                  onLongPressStart: (_){
+                                    HomePageState.settingsUserWeekOffsetPeriodicLooper = Timer.periodic(const Duration(milliseconds: 100), (timer) {
+                                      AppHaptics.lightImpact();
+                                      HomePageState.settingsUserWeekOffsetAdd(1);
+                                    });
+                                  },
+                                  onLongPressEnd: (_){
+                                    HomePageState.settingsUserWeekOffsetPeriodicLooper!.cancel();
+                                    HomePageState.settingsUserWeekOffsetPeriodicLooper = null;
+                                  },
+                                  child: IconButton(
+                                    onPressed: () {
+                                      AppHaptics.lightImpact();
+                                      HomePageState.settingsUserWeekOffsetAdd(1);
+                                    },
+                                    icon: Icon(
+                                      Icons.arrow_drop_up_rounded,
+                                      color: AppColors.getTheme().textColor.withValues(alpha: .5),
+                                      size: 16,
+                                    ),
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(),
+                                  ),
+                                ),
+                              ),
+                              SizedBox(
+                                width: 26,
+                                height: 26,
+                                child: GestureDetector(
+                                  onLongPressStart: (_){
+                                    HomePageState.settingsUserWeekOffsetPeriodicLooper = Timer.periodic(const Duration(milliseconds: 100), (timer) {
+                                      AppHaptics.lightImpact();
+                                      HomePageState.settingsUserWeekOffsetAdd(-1);
+                                    });
+                                  },
+                                  onLongPressEnd: (_){
+                                    HomePageState.settingsUserWeekOffsetPeriodicLooper!.cancel();
+                                    HomePageState.settingsUserWeekOffsetPeriodicLooper = null;
+                                  },
+                                  child: IconButton(
+                                    onPressed: () {
+                                      AppHaptics.lightImpact();
+                                      HomePageState.settingsUserWeekOffsetAdd(-1);
+                                    },
+                                    icon: Icon(
+                                      Icons.arrow_drop_down_rounded,
+                                      color: AppColors.getTheme().textColor.withValues(alpha: .5),
+                                      size: 16,
+                                    ),
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          )
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            )
         );
         list.add(const SizedBox(height: 6));
         final pinfo = widget.pinfo ?? PackageInfo(appName: 'neptun2', packageName: 'com.domedav.neptun2', version: '1.1.2', buildNumber: '7', buildSignature: '');
@@ -1496,9 +1282,9 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
             AppStrings.getStringWithParams(AppStrings.getLanguagePack().popup_case1_settingBottomText_InstallOrigin, ['v${pinfo.version} (${pinfo.buildNumber})']) + (DataCache.getIsInstalledFromGPlay()! != 0 ? AppStrings.getLanguagePack().popup_case1_settingBottomText_InstallOriginGPlay : AppStrings.getLanguagePack().popup_case1_settingBottomText_InstallOrigin3rdParty),
             textAlign: TextAlign.center,
             style: TextStyle(
-              fontWeight: FontWeight.w300,
-              fontSize: 9,
-              color: AppColors.getTheme().onSecondary.withValues(alpha: .8)
+                fontWeight: FontWeight.w300,
+                fontSize: 9,
+                color: AppColors.getTheme().onSecondary.withValues(alpha: .8)
             ),
           ),
         ));
@@ -1527,29 +1313,6 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
             ),
           ),
         ));
-        /*list.add(TextButton(
-          onPressed: (){
-            if(!PopupWidgetHandler._instance!._inUse || !mounted){
-              return;
-            }
-            AppHaptics.lightImpact();
-            DataCache.dataWipeNoKeep();
-          },
-          style: ButtonStyle(
-            backgroundColor: WidgetStateProperty.all(const Color.fromRGBO(0xFF, 0xFF, 0xFF, 0.05)),
-            overlayColor: WidgetStateProperty.all(Colors.white.withValues(alpha: .05)),
-          ),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 45, vertical: 15),
-            child: Text('dev_WipeAll',
-              style: const TextStyle(
-                color: Color.fromRGBO(0x6D, 0xC2, 0xD3, 1.0),
-                fontWeight: FontWeight.w900,
-                fontSize: 18.0,
-              ),
-            ),
-          ),
-        ));*/
         return list;
 
       case 2:
@@ -1576,9 +1339,9 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
           AppStrings.getLanguagePack().popup_case2_RateAppPopupDescription,
           textAlign: TextAlign.center,
           style: TextStyle(
-            color: AppColors.getTheme().textColor,
-            fontSize: 14,
-            fontWeight: FontWeight.w400
+              color: AppColors.getTheme().textColor,
+              fontSize: 14,
+              fontWeight: FontWeight.w400
           ),
         ));
         list.add(const SizedBox(height: 20));
@@ -1632,9 +1395,9 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
           TextSpan(
             text: MailPopupDisplayTexts.title,
             style: TextStyle(
-              color: AppColors.getTheme().onPrimaryContainer,
-              fontWeight: FontWeight.w600,
-              fontSize: 20
+                color: AppColors.getTheme().onPrimaryContainer,
+                fontWeight: FontWeight.w600,
+                fontSize: 20
             ),
           ),
           textAlign: TextAlign.start,
@@ -1649,7 +1412,7 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const SizedBox(
                   height: 100,
-                  child: Center(child: CircularProgressIndicator()) // TÖLTÉS IKON
+                  child: Center(child: CircularProgressIndicator())
               );
             }
             if (snapshot.hasError) {
@@ -1724,9 +1487,9 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
             TextSpan(
               text: entry!.title,
               style: TextStyle(
-                color: AppColors.getTheme().textColor,
-                fontWeight: FontWeight.w600,
-                fontSize: 20
+                  color: AppColors.getTheme().textColor,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 20
               ),
             )
         ));
@@ -1736,36 +1499,25 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
           mainAxisSize: MainAxisSize.max,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            /*Flexible(
-              child: Text(
-                AppStrings.getLanguagePack().popup_case4_TeachedBy,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                    color: AppColors.getTheme().onPrimaryContainer,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 14.5
-                ),
-              ),
-            ),*/
             Flexible(
-              child: Icon(
-                Icons.person_rounded,
-                color: AppColors.getTheme().onPrimaryContainer,
-                size: 24,
-              )
+                child: Icon(
+                  Icons.person_rounded,
+                  color: AppColors.getTheme().onPrimaryContainer,
+                  size: 24,
+                )
             ),
             const Padding(padding: EdgeInsets.symmetric(horizontal: 5)),
             Flexible(
-              child: SelectableText.rich(
-                TextSpan(
-                  text: entry.teacher,
-                  style: TextStyle(
-                      color: AppColors.getTheme().textColor,
-                      fontWeight: FontWeight.w400,
-                      fontSize: 14
+                child: SelectableText.rich(
+                  TextSpan(
+                    text: entry.teacher,
+                    style: TextStyle(
+                        color: AppColors.getTheme().textColor,
+                        fontWeight: FontWeight.w400,
+                        fontSize: 14
+                    ),
                   ),
-                ),
-              )
+                )
             )
           ],
         ));
@@ -1775,17 +1527,6 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
           mainAxisSize: MainAxisSize.max,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            /*Flexible(
-              child: Text(
-                AppStrings.getLanguagePack().popup_case4_5_SubjectCode,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                    color: AppColors.getTheme().onPrimaryContainer,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 14.5
-                ),
-              ),
-            ),*/
             Flexible(
                 child: Icon(
                   Icons.tag_rounded,
@@ -1795,16 +1536,16 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
             ),
             const Padding(padding: EdgeInsets.symmetric(horizontal: 5)),
             Flexible(
-              child: SelectableText.rich(
-                TextSpan(
-                  text: entry.subjectCode,
-                  style: TextStyle(
-                      color: AppColors.getTheme().textColor,
-                      fontWeight: FontWeight.w400,
-                      fontSize: 14
+                child: SelectableText.rich(
+                  TextSpan(
+                    text: entry.subjectCode,
+                    style: TextStyle(
+                        color: AppColors.getTheme().textColor,
+                        fontWeight: FontWeight.w400,
+                        fontSize: 14
+                    ),
                   ),
-                ),
-              )
+                )
             )
           ],
         ));
@@ -1815,17 +1556,6 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
             mainAxisSize: MainAxisSize.max,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              /*Flexible(
-              child: Text(
-                AppStrings.getLanguagePack().popup_case4_5_SubjectLocation,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                    color: AppColors.getTheme().onPrimaryContainer,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 14.5
-                ),
-              ),
-            ),*/
               Flexible(
                   child: Icon(
                     Icons.location_on_rounded,
@@ -1857,17 +1587,6 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
           mainAxisSize: MainAxisSize.max,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            /*Flexible(
-              child: Text(
-                AppStrings.getLanguagePack().popup_case4_SubjectStartTime,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                    color: AppColors.getTheme().onPrimaryContainer,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 14.5
-                ),
-              ),
-            ),*/
             Flexible(
                 child: Icon(
                   Icons.access_time_filled_rounded,
@@ -1877,7 +1596,7 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
             ),
             const Padding(padding: EdgeInsets.symmetric(horizontal: 5)),
             Flexible(
-              child: SelectableText.rich(
+                child: SelectableText.rich(
                   TextSpan(
                     text: '${timeStart.hour.toString().padLeft(2, '0')}:${timeStart.minute.toString().padLeft(2, '0')} - ${timeEnd.hour.toString().padLeft(2, '0')}:${timeEnd.minute.toString().padLeft(2, '0')}',
                     style: TextStyle(
@@ -1953,17 +1672,6 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
           mainAxisSize: MainAxisSize.max,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            /*Flexible(
-              child: Text(
-                AppStrings.getLanguagePack().popup_case4_5_SubjectCode,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                    color: AppColors.getTheme().onPrimaryContainer,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 14.5
-                ),
-              ),
-            ),*/
             Flexible(
                 child: Icon(
                   Icons.tag_rounded,
@@ -1992,17 +1700,6 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
           mainAxisSize: MainAxisSize.max,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            /*Flexible(
-              child: Text(
-                AppStrings.getLanguagePack().popup_case4_5_SubjectLocation,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                    color: AppColors.getTheme().onPrimaryContainer,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 14.5
-                ),
-              ),
-            ),*/
             Flexible(
                 child: Icon(
                   Icons.location_on_rounded,
@@ -2032,17 +1729,6 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
           mainAxisSize: MainAxisSize.max,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            /*Flexible(
-              child: Text(
-                AppStrings.getLanguagePack().popup_case5_ExamStartTime,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                    color: AppColors.getTheme().onPrimaryContainer,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 14.5
-                ),
-              ),
-            ),*/
             Flexible(
                 child: Icon(
                   Icons.access_time_filled_rounded,
@@ -2358,35 +2044,36 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
         behavior: HitTestBehavior.deferToChild,
         child: PopScope(
           canPop: false,
-          onPopInvoked: (_) {
+          onPopInvokedWithResult: (bool didPop, dynamic result) { // <-- DYNAMIC RESULT
+            if (didPop) return;
             PopupWidgetHandler.closePopup(context);
           },
           child: Stack(
             alignment: Alignment.bottomCenter,
             children: [
               Container(
-                alignment: Alignment.center,
-                color: Colors.transparent,
-                padding: widget.topPadding,
-                margin: EdgeInsets.only(bottom: mounted ? MediaQuery.of(context).viewInsets.bottom : 0),
-                child: SingleChildScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  controller: PopupWidgetHandler._instance!.scrollController,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 30, horizontal: 10),
-                    margin: const EdgeInsets.all(15),
-                    decoration: BoxDecoration(
-                      color: AppColors.getTheme().rootBackground,
-                      borderRadius: BorderRadius.all(Radius.circular(20)),
+                  alignment: Alignment.center,
+                  color: Colors.transparent,
+                  padding: widget.topPadding,
+                  margin: EdgeInsets.only(bottom: mounted ? MediaQuery.of(context).viewInsets.bottom : 0),
+                  child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    controller: PopupWidgetHandler._instance!.scrollController,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 30, horizontal: 10),
+                      margin: const EdgeInsets.all(15),
+                      decoration: BoxDecoration(
+                        color: AppColors.getTheme().rootBackground,
+                        borderRadius: const BorderRadius.all(Radius.circular(20)),
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: getWidgets(PopupWidgetHandler._instance!.mode),
+                      ),
                     ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      children: getWidgets(PopupWidgetHandler._instance!.mode),
-                    ),
-                  ),
-                )
+                  )
               ),
               Visibility(
                 visible: _shouldShowSnackbar,
@@ -2411,13 +2098,13 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: popupController,
-      builder: (context, _) {
-        return Transform.scale(
-          scale: poppuAnimation.value,
-          child: getPopup(context)
-        );
-      }
+        animation: popupController,
+        builder: (context, _) {
+          return Transform.scale(
+              scale: poppuAnimation.value,
+              child: getPopup(context)
+          );
+        }
     );
   }
 }
