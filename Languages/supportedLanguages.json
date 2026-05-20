@@ -3,55 +3,55 @@
     {
       "langName":"Deutsch",
       "langId":"de",
-      "langURL":"https://raw.githubusercontent.com/domedav/Neptun-2/main/Languages/LangExtentions/German.json",
+      "langURL":"https://raw.githubusercontent.com/zoligamer/Neptun-Mobile-fork/refs/heads/main/Languages/LangExtentions/German.json",
       "langFlag":"🇩🇪"
     },
     {
       "langName":"Română",
       "langId":"ro",
-      "langURL":"https://raw.githubusercontent.com/domedav/Neptun-2/main/Languages/LangExtentions/Romanian.json",
+      "langURL":"https://raw.githubusercontent.com/zoligamer/Neptun-Mobile-fork/refs/heads/main/Languages/LangExtentions/Romanian.json",
       "langFlag":"🇷🇴"
     },
     {
       "langName":"Русский",
       "langId":"ru",
-      "langURL":"https://raw.githubusercontent.com/domedav/Neptun-2/main/Languages/LangExtentions/Russian.json",
+      "langURL":"https://raw.githubusercontent.com/zoligamer/Neptun-Mobile-fork/refs/heads/main/Languages/LangExtentions/Russian.json",
       "langFlag":"🇷🇺"
     },
     {
       "langName":"Türkçe",
       "langId":"tr",
-      "langURL":"https://raw.githubusercontent.com/domedav/Neptun-2/main/Languages/LangExtentions/Turkish.json",
+      "langURL":"https://raw.githubusercontent.com/zoligamer/Neptun-Mobile-fork/refs/heads/main/Languages/LangExtentions/Turkish.json",
       "langFlag":"🇹🇷"
     },
     {
       "langName":"Pirate",
       "langId":"7s",
-      "langURL":"https://raw.githubusercontent.com/domedav/Neptun-2/main/Languages/LangExtentions/Pirate.json",
+      "langURL":"https://raw.githubusercontent.com/zoligamer/Neptun-Mobile-fork/refs/heads/main/Languages/LangExtentions/Pirate.json",
       "langFlag":"🏴‍☠️"
     },
     {
       "langName":"Україна",
       "langId":"ua",
-      "langURL":"https://raw.githubusercontent.com/domedav/Neptun-2/main/Languages/LangExtentions/Ukranian.json",
+      "langURL":"https://raw.githubusercontent.com/zoligamer/Neptun-Mobile-fork/refs/heads/main/Languages/LangExtentions/Ukranian.json",
       "langFlag":"🇺🇦"
     },
     {
       "langName":"عربي",
       "langId":"ar",
-      "langURL":"https://raw.githubusercontent.com/domedav/Neptun-2/main/Languages/LangExtentions/UnitedArabEmirates.json",
+      "langURL":"https://raw.githubusercontent.com/zoligamer/Neptun-Mobile-fork/refs/heads/main/Languages/LangExtentions/UnitedArabEmirates.json",
       "langFlag":"🇦🇪"
     },
     {
       "langName":"España",
       "langId":"es",
-      "langURL":"https://raw.githubusercontent.com/domedav/Neptun-2/main/Languages/LangExtentions/Spanish.json",
+      "langURL":"https://raw.githubusercontent.com/zoligamer/Neptun-Mobile-fork/refs/heads/main/Languages/LangExtentions/Spanish.json",
       "langFlag":"🇪🇸"
     },
     {
       "langName":"中国人",
       "langId":"zh",
-      "langURL":"https://raw.githubusercontent.com/domedav/Neptun-2/main/Languages/LangExtentions/Chinese.json",
+      "langURL":"https://raw.githubusercontent.com/zoligamer/Neptun-Mobile-fork/refs/heads/main/Languages/LangExtentions/Chinese.json",
       "langFlag":"🇨🇳"
     }
   ]

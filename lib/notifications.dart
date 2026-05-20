@@ -43,8 +43,7 @@ class AppNotifications{
   }
 
   static tz.TZDateTime _convert(int year, int month, int day, int hour, int minute){
-    final now = tz.TZDateTime.now(tz.local);
-    var scheduleDate = tz.TZDateTime(
+    return tz.TZDateTime(
       tz.local,
       year,
       month,
@@ -52,22 +51,24 @@ class AppNotifications{
       hour,
       minute,
     );
-    if (scheduleDate.isBefore(now)) {
-      scheduleDate = scheduleDate.add(const Duration(days: 1));
-    }
-    return scheduleDate;
   }
-  
+
   static Future<void> scheduleNotification(String title, String content, DateTime time, int id) async{
-    //log("$title $time $id");
+    final tzTime = _convert(time.year, time.month, time.day, time.hour, time.minute);
+    final now = tz.TZDateTime.now(tz.local);
+
+    if (tzTime.isBefore(now)) {
+      return;
+    }
+
     final details = NotificationDetails(
       android: AndroidNotificationDetails(
           '0',
-          'Neptun 2 Időzített',
+          'Neptun Mobile Időzített',
           channelDescription: 'Olyan értesítések csatornája, amelyeket időzítetten, azaz a nap folyamán valamikor akar az applikáció megjeleníteni neked.',
           importance: Importance.high,
           priority: Priority.high,
-          ticker: 'Neptun 2 Időzített Értesítés',
+          ticker: 'Neptun Mobile Időzített Értesítés',
           styleInformation: BigTextStyleInformation(content, contentTitle: title)
       ),
       linux: const LinuxNotificationDetails(
@@ -82,7 +83,7 @@ class AppNotifications{
         id: counter,
         title: title,
         body: content,
-        scheduledDate: _convert(time.year, time.month, time.day, time.hour, time.minute),
+        scheduledDate: tzTime,
         notificationDetails: details,
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
       );
@@ -93,11 +94,11 @@ class AppNotifications{
     final details = NotificationDetails(
       android: AndroidNotificationDetails(
           '1',
-          'Neptun 2 Azonnali',
+          'Neptun Mobile Azonnali',
           channelDescription: 'Olyan értesítések csatornája, amelyeket azonnal akar az applikáció megjeleníteni neked.',
           importance: Importance.high,
           priority: Priority.high,
-          ticker: 'Neptun 2 Azonnali Értesítés',
+          ticker: 'Neptun Mobile Azonnali Értesítés',
           styleInformation: BigTextStyleInformation(desc, contentTitle: title)
       ),
       linux: const LinuxNotificationDetails(

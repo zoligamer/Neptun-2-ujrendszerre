@@ -43,8 +43,7 @@ class AppUpdater {
       // Elmentjük a sikeres ellenőrzés idejét
       await saveInt('ObsoleteAppVerUpdateCacheTime', DateTime.now().millisecondsSinceEpoch);
 
-      // 4. Verzió összehasonlítás
-      if (latestVersionClean != currentVersion) {
+      if (_isNewerVersion(currentVersion, latestVersionClean)) {
         if (!context.mounted) return;
 
         bool shouldUpdate = await _showUpdateDialog(context, latestVersionClean);
@@ -136,6 +135,19 @@ class AppUpdater {
       Navigator.pop(context);
       debugPrint("Hálózati hiba a letöltés során: $e");
     }
+  }
+  /// Darabjaira szedi a verziószámokat (pl. 1.0.2) és megnézi, hogy a latest tényleg nagyobb-e.
+  static bool _isNewerVersion(String current, String latest) {
+    List<int> currParts = current.split('.').map((e) => int.tryParse(e) ?? 0).toList();
+    List<int> latestParts = latest.split('.').map((e) => int.tryParse(e) ?? 0).toList();
+
+    for (int i = 0; i < latestParts.length; i++) {
+      int c = i < currParts.length ? currParts[i] : 0;
+      int l = latestParts[i];
+      if (l > c) return true;  // A GitHub verzió nagyobb
+      if (l < c) return false; // A telefonos verzió a nagyobb
+    }
+    return false; // Pontosan egyeznek
   }
 }
 

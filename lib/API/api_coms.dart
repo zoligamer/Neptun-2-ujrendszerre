@@ -69,7 +69,7 @@ import '../storage.dart';
       return response ?? '{}';
     }
 
-    //new GET REQUEST for modern API
+    static bool _isRefreshingToken = false;
 
     static Future<String> getRequest(Uri url, {required String bearerToken, bool isRetry = false}) async {
       HttpOverrides.global = NeptunCerts.getCerts();
@@ -83,21 +83,33 @@ import '../storage.dart';
         final response = await http.Response.fromStream(streamedResponse);
         client.close();
 
+        // Ha a token lejárt:
         if ((response.statusCode == 401 || response.body.contains('"statusCode": 401') || response.body.contains('Authorization has been denied')) && !isRetry) {
-          debug.log("Token lejárt! Automatikus újra-bejelentkezés a háttérben...");
 
-          final username = storage.DataCache.getUsername()!;
-          final password = storage.DataCache.getPassword()!;
-          final baseUrl = storage.DataCache.getInstituteUrl()!;
+          // --- ÚJ VERSENYHELYZET GÁTLÓ LOGIKA ---
+          if (!_isRefreshingToken) {
+            _isRefreshingToken = true; // Bezárjuk a lakatot
+            debug.log("Token lejárt! Automatikus újra-bejelentkezés indítása...");
 
+            final username = storage.DataCache.getUsername()!;
+            final password = storage.DataCache.getPassword()!;
+            final baseUrl = storage.DataCache.getInstituteUrl()!;
 
-          final success = await InstitutesRequest.validateLoginCredentialsUrl(baseUrl, username, password);
+            await InstitutesRequest.validateLoginCredentialsUrl(baseUrl, username, password);
 
-          if (success == 1) {
-
-            final newToken = await storage.DataCache.getAccessToken();
-            return await getRequest(url, bearerToken: newToken!, isRetry: true);
+            _isRefreshingToken = false; // Kinyitjuk a lakatot
+          } else {
+            // Ha egy másik fül már frissíti a tokent, várunk rá!
+            debug.log("Egy másik fül már frissít, várakozás...");
+            while (_isRefreshingToken) {
+              await Future.delayed(const Duration(milliseconds: 100));
+            }
           }
+          // ----------------------------------------
+
+          // Mindenki megkapja az új tokent, és újra próbálkozik
+          final newToken = await storage.DataCache.getAccessToken();
+          return await getRequest(url, bearerToken: newToken!, isRetry: true);
         }
 
         return response.body;

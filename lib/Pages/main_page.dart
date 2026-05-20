@@ -675,6 +675,7 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin{
   final List<api.CalendarEntry> _classesNotificationList = <api.CalendarEntry>[].toList();
 
   Future<void> _setupClassesNotifications(List<api.CalendarEntry> items)async{
+    // Megj: Itt a 'getNeedExamNotifications'-t ellenőrzöd, ha van külön 'getNeedClassesNotifications', érdemes lehet arra cserélni!
     if(!storage.DataCache.getNeedExamNotifications()!){
       return;
     }
@@ -682,9 +683,19 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin{
       // set up notifications for today
       final now = DateTime.now();
       if(now.millisecondsSinceEpoch < item.startEpoch && !item.isExam){ // did not pass them in time
-        await AppNotifications.scheduleNotification('Óra', '"${item.title}" órád lesz itt: "${item.location}" 10 perc múlva!', DateTime.fromMillisecondsSinceEpoch((Duration(milliseconds: item.startEpoch) - const Duration(minutes: 10)).inMilliseconds), 1);
-        await AppNotifications.scheduleNotification('Óra', '"${item.title}" órád lesz itt: "${item.location}" 5 perc múlva!', DateTime.fromMillisecondsSinceEpoch((Duration(milliseconds: item.startEpoch) - const Duration(minutes: 5)).inMilliseconds), 1);
-        await AppNotifications.scheduleNotification('Óra', '"${item.title}" órád van itt: "${item.location}"!', DateTime.fromMillisecondsSinceEpoch(item.startEpoch), 1);
+
+        String finalRoom = item.location;
+        if (item.classInstanceId != null && item.classInstanceId!.isNotEmpty) {
+          String? cachedRoom = await storage.getString('room_${item.classInstanceId}');
+          if (cachedRoom != null && cachedRoom.isNotEmpty && cachedRoom != "Nincs terem") {
+            finalRoom = cachedRoom;
+          }
+        }
+        // -------------------------------------------------------------------------------
+
+        await AppNotifications.scheduleNotification('Óra', '"${item.title}" órád lesz itt: "$finalRoom" 10 perc múlva!', DateTime.fromMillisecondsSinceEpoch((Duration(milliseconds: item.startEpoch) - const Duration(minutes: 10)).inMilliseconds), 1);
+        await AppNotifications.scheduleNotification('Óra', '"${item.title}" órád lesz itt: "$finalRoom" 5 perc múlva!', DateTime.fromMillisecondsSinceEpoch((Duration(milliseconds: item.startEpoch) - const Duration(minutes: 5)).inMilliseconds), 1);
+        await AppNotifications.scheduleNotification('Óra', '"${item.title}" órád van itt: "$finalRoom"!', DateTime.fromMillisecondsSinceEpoch(item.startEpoch), 1);
       }
     }
   }
@@ -1704,7 +1715,7 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin{
 
   bool keepHomeButtonHidden = true;
 
-  bool _noRefreshCalendar = true;
+  bool _noRefreshCalendar = false;
 
   Future<void> onCalendarRefresh(bool isPaging) async{
     if(_noRefreshCalendar){
@@ -1740,7 +1751,7 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin{
   }
 
   bool _markbookDebounce = false;
-  bool _noRefreshMarkbook = true;
+  bool _noRefreshMarkbook = false;
   Future<void> onMarkbookRefresh() async{
     if(_noRefreshMarkbook){
       Future.delayed(Duration(seconds: 2), (){
@@ -1759,7 +1770,7 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin{
   }
 
   bool _paymentsDebounce = false;
-  bool _noRefreshPayments = true;
+  bool _noRefreshPayments = false;
 
   Future<void> onPaymentsRefresh() async{
     if(_noRefreshPayments){
@@ -1779,7 +1790,7 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin{
   }
 
   bool _periodsDebounce = false;
-  bool _noRefreshPeriods = true;
+  bool _noRefreshPeriods = false;
 
   Future<void> onPeriodsRefresh()async{
     if(_noRefreshPeriods){
@@ -1799,7 +1810,7 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin{
   }
 
   bool _mailsDebounce = false;
-  bool _noRefreshMail = true;
+  bool _noRefreshMail = false;
 
   Future<void> onMailRefresh()async{
     if(_noRefreshMail){
