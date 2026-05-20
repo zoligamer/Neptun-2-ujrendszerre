@@ -26,55 +26,34 @@ class TimetableElementWidget extends StatelessWidget {
 
   late final bool currentOverride;
 
-  late final bool isTask; // ÚJ
+  late final bool isTask;
 
   TimetableElementWidget(
       {super.key, required this.entry, required this.position, required this.isCurrent}) {
     isExam = entry.isExam;
-    isTask = entry.isTask; // ÚJ
+    isTask = entry.isTask;
     title = entry.title;
     location = entry.location;
 
-    var date = DateTime.fromMillisecondsSinceEpoch(entry.startEpoch);
-    var hour = date.hour.toString().padLeft(2, '0');
-    var minute = date.minute.toString().padLeft(2, '0');
+    // start date
+    var startDate = DateTime.fromMillisecondsSinceEpoch(entry.startEpoch);
+    var startHour = startDate.hour.toString().padLeft(2, '0');
+    var startMinute = startDate.minute.toString().padLeft(2, '0');
+    displayStartTime = "$startHour:$startMinute";
 
-    displayStartTime = "$hour:$minute";
+    // actual end date calc, not mathing
+    var endDate = DateTime.fromMillisecondsSinceEpoch(entry.endEpoch);
+    var endHour = endDate.hour.toString().padLeft(2, '0');
+    var endMinute = endDate.minute.toString().padLeft(2, '0');
+    displayEndTime = "$endHour:$endMinute";
 
-    date = DateTime.fromMillisecondsSinceEpoch(entry.endEpoch).subtract(
-        Duration(hours: date.hour, minutes: date.minute));
-    hour = date.hour.toString().padLeft(2, '0');
-    minute = date.minute.toString().padLeft(2, '0');
+    // --- 3. actual enddate
+    endDateNormalized = endDate;
 
-    var totalMins = date.hour * 60 + date.minute;
-
-    var realMinutes = 0;
-    var realHours = 0;
-    var i = 1;
-    for (
-    realMinutes = 0; realMinutes <= totalMins && realMinutes + 45 <= totalMins;
-    realMinutes += 45) {
-      if (i % 2 == 0) {
-        realHours++;
-      }
-      i++;
-    }
-    realMinutes -= realHours * 60;
-
-    date = DateTime.fromMillisecondsSinceEpoch(entry.startEpoch).add(
-        Duration(hours: realHours, minutes: realMinutes));
-    hour = date.hour.toString().padLeft(2, '0');
-    minute = date.minute.toString().padLeft(2, '0');
-    displayEndTime = "$hour:$minute";
-
-    endDateNormalized = date;
-
-    if (endDateNormalized.millisecondsSinceEpoch < DateTime
-        .now()
-        .millisecondsSinceEpoch) {
+    // --- 4. active status ---
+    if (endDateNormalized.millisecondsSinceEpoch < DateTime.now().millisecondsSinceEpoch) {
       currentOverride = false;
-    }
-    else {
+    } else {
       currentOverride = isCurrent;
     }
   }
@@ -84,14 +63,12 @@ class TimetableElementWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-  // --- BETŰMÉRET SZORZÓ ---
-  // Később, ha kész a Beállítások menü, ezt a storage-ból is lekérheted:
-  // double fontScale = storage.DataCache.getFontScale() ?? 1.0;
-  double fontScale = 1.2; // Próbáld ki 1.15-tel vagy 1.2-vel a teszteléshez!
+  // --- font upscale ---
+  //double fontScale = storage.DataCache.getFontScale()/* ?? 1.0*/;
+  double fontScale = 1.15;
 
   return GestureDetector(
     onTap: () {
-      // Ha vizsga, a régi megszokott popup jön fel
       if (isExam) {
         TimetableCurrentlySelected.entry = entry;
         PopupWidgetHandler(mode: 5, callback: (_) {});

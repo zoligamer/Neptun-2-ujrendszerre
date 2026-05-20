@@ -13,6 +13,7 @@ import 'package:neptun2/language.dart';
 import 'package:neptun2/storage.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../API/api_coms.dart';
+import '../API/api_coms.dart' as api;
 import '../MailElements/mail_element_widget.dart';
 import '../Pages/startup_page.dart';
 import '../TimetableElements/timetable_element_widget.dart';
@@ -1639,17 +1640,34 @@ class PopupWidget extends State<PopupWidgetState> with TickerProviderStateMixin{
           textAlign: TextAlign.start,
         ));
         list.add(const SizedBox(height: 20));
-        list.add(SelectableText.rich(
-          TextSpan(
-            text: '',
-            children: MailPopupDisplayTexts.description,
-            style: TextStyle(
-                color: AppColors.getTheme().textColor,
-                fontWeight: FontWeight.w400,
-                fontSize: 14
-            ),
+        list.add(FutureBuilder<String>(
+          future: api.MailRequest.getMailContent(
+              MailPopupDisplayTexts.mailID,
+              MailPopupDisplayTexts.description.map((e) => e.toPlainText()).join()
           ),
-          textAlign: TextAlign.start,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const SizedBox(
+                  height: 100,
+                  child: Center(child: CircularProgressIndicator()) // TÖLTÉS IKON
+              );
+            }
+            if (snapshot.hasError) {
+              return Text("Hiba: ${snapshot.error}", style: TextStyle(color: AppColors.getTheme().errorRed));
+            }
+
+            return SelectableText.rich(
+              TextSpan(
+                children: api.Generic.textToInlineSpan(snapshot.data ?? "Üres üzenet."),
+                style: TextStyle(
+                    color: AppColors.getTheme().textColor,
+                    fontWeight: FontWeight.w400,
+                    fontSize: 14
+                ),
+              ),
+              textAlign: TextAlign.start,
+            );
+          },
         ));
 
         list.add(const SizedBox(height: 20));

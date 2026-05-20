@@ -1174,7 +1174,7 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin{
         continue;
       }
       isEmpty = false;
-      paymentsList.add(PaymentElementWidget(ammount: item.ammount, dueDateMs: item.dueDateMs, ID: item.ID, name: item.comment));
+      paymentsList.add(PaymentElementWidget(ammount: item.ammount, dueDateMs: item.dueDateMs, ID: item.ID, name: item.comment, completed: item.completed));
       if(item.dueDateMs > DateTime.now().millisecondsSinceEpoch || item.dueDateMs == 0){
         _paymentsNotificationList.add(item);
       }
@@ -1584,7 +1584,7 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin{
       final len = await storage.getInt('CachedPaymentsLength');
       for(int i = 0; i < len!; i++){
         final calEntry = await storage.getString('CachedPayments_$i');
-        paymentsEntries.add(api.CashinEntry(0, 0, 'NULL', 0, 'NULL').fillWithExisting(calEntry!));
+        paymentsEntries.add(api.CashinEntry(0, 0, 'NULL', "", 'NULL').fillWithExisting(calEntry!));
       }
       return;
     }
@@ -1661,7 +1661,7 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin{
       totalMailCount = (await storage.getInt('CachedMailsTotal')) ?? 0;
       for(int i = 0; i < len!; i++){
         final calEntry = await storage.getString('CachedMails_$i');
-        mailEntries.add(api.MailEntry("ERROR", "ERROR", "ERROR", 0, false, 0).fillWithExisting(calEntry!));
+        mailEntries.add(api.MailEntry("ERROR", "ERROR", "ERROR", 0, false,"").fillWithExisting(calEntry!));
       }
       return;
     }
@@ -1907,7 +1907,12 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin{
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Stack(
+        drawer: AppDrawer(
+            loggedInUsername: storage.DataCache.getUsername()!,
+            loggedInURL: storage.DataCache.getInstituteUrl()!.replaceAll(RegExp(r'/hallgato/MobileService\.svc'), '').replaceAll("https://", '')
+        ),
+      body: SafeArea(
+        child: Stack(
         children: [
           Visibility(
               visible: currentView == 0,
@@ -2005,6 +2010,7 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin{
           ),
         ],
       ),
+      )
     );
   }
 }
@@ -2023,7 +2029,8 @@ class CalendarPageWidget extends StatelessWidget{
           loggedInUsername: storage.DataCache.getUsername()!,
           loggedInURL: storage.DataCache.getInstituteUrl()!.replaceAll(RegExp(r'/hallgato/MobileService\.svc'), '').replaceAll("https://", '')
       ),
-      body: Stack(
+      body: SafeArea(
+        child: Stack(
         children: [
           Column(
             mainAxisAlignment: MainAxisAlignment.start,
@@ -2078,7 +2085,8 @@ class CalendarPageWidget extends StatelessWidget{
               bottomnav.BottomNavigatorWidget(homePage: homePage),
             ],
           ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -2161,7 +2169,12 @@ class MarkbookPageWidget extends StatelessWidget{
       });
     }
     return Scaffold(
-      body: Stack(
+      drawer: AppDrawer(
+          loggedInUsername: storage.DataCache.getUsername()!,
+          loggedInURL: storage.DataCache.getInstituteUrl()!.replaceAll(RegExp(r'/hallgato/MobileService\.svc'), '').replaceAll("https://", '')
+      ),
+      body: SafeArea(
+        child: Stack(
         children: [
           Column(
             mainAxisAlignment: MainAxisAlignment.start,
@@ -2271,7 +2284,7 @@ class MarkbookPageWidget extends StatelessWidget{
           )
         ],
       ),
-      floatingActionButton: null
+      ),
     );
   }
 }
@@ -2301,7 +2314,12 @@ class PaymentsPageWidget extends StatelessWidget{
   @override
   Widget build(BuildContext context){
     return Scaffold(
-      body: Stack(
+        drawer: AppDrawer(
+            loggedInUsername: storage.DataCache.getUsername()!,
+            loggedInURL: storage.DataCache.getInstituteUrl()!.replaceAll(RegExp(r'/hallgato/MobileService\.svc'), '').replaceAll("https://", '')
+        ),
+      body: SafeArea(
+        child: Stack(
         children: [
           Column(
             mainAxisAlignment: MainAxisAlignment.start,
@@ -2356,7 +2374,7 @@ class PaymentsPageWidget extends StatelessWidget{
           ),
         ],
       ),
-      floatingActionButton: null
+    )
     );
   }
 }
@@ -2374,7 +2392,12 @@ class PeriodsPageWidget extends StatelessWidget{
   @override
   Widget build(BuildContext context){
     return Scaffold(
-        body: Stack(
+        drawer: AppDrawer(
+            loggedInUsername: storage.DataCache.getUsername()!,
+            loggedInURL: storage.DataCache.getInstituteUrl()!.replaceAll(RegExp(r'/hallgato/MobileService\.svc'), '').replaceAll("https://", '')
+        ),
+        body: SafeArea(
+          child: Stack(
           children: [
             Column(
               mainAxisAlignment: MainAxisAlignment.start,
@@ -2428,6 +2451,7 @@ class PeriodsPageWidget extends StatelessWidget{
             ),
           ],
         ),
+        ),
         floatingActionButton: null
     );
   }
@@ -2445,7 +2469,12 @@ class MailsPageWidget extends StatelessWidget{
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        body: Stack(
+        drawer: AppDrawer(
+            loggedInUsername: storage.DataCache.getUsername()!,
+            loggedInURL: storage.DataCache.getInstituteUrl()!.replaceAll(RegExp(r'/hallgato/MobileService\.svc'), '').replaceAll("https://", '')
+        ),
+        body: SafeArea(
+          child: Stack(
           children: [
             Column(
               mainAxisAlignment: MainAxisAlignment.start,
@@ -2500,7 +2529,7 @@ class MailsPageWidget extends StatelessWidget{
             ),
           ],
         ),
-        floatingActionButton: null
+        )
     );
   }
 }

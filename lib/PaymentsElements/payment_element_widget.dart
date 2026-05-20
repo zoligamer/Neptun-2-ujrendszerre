@@ -3,57 +3,70 @@ import 'package:neptun2/API/api_coms.dart';
 import 'package:neptun2/language.dart';
 import '../Misc/emojirich_text.dart';
 import '../colors.dart';
+import '../storage.dart';
 
 class PaymentElementWidget extends StatelessWidget{
-  final int ID;
+  final String ID;
   final int ammount;
   final int dueDateMs;
   final String name;
-  const PaymentElementWidget({super.key, required this.ammount, required this.dueDateMs, required this.name, required this.ID});
+  final bool completed;
+
+  const PaymentElementWidget({super.key, required this.ammount, required this.dueDateMs, required this.name, required this.ID, required this.completed});
 
   @override
   Widget build(BuildContext context) {
+    double fontScale = DataCache.getFontScale();
+
     final nowMs = DateTime.now().millisecondsSinceEpoch;
     final dueDate = DateTime.fromMillisecondsSinceEpoch(dueDateMs);
     final isNonTimed = dueDateMs <= 0;
-    final isMissed = dueDateMs < nowMs && !isNonTimed;
+    final isMissed = dueDateMs < nowMs && !isNonTimed && !completed;
+
+
+    final cardColor = completed ? AppColors.getTheme().currentClassGreen :
+    isMissed ? AppColors.getTheme().errorRed :
+    Colors.amber.shade600;
 
     return Container(
-      margin: const EdgeInsets.all(8),
+
+      margin: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 25),
-      decoration: isMissed ? BoxDecoration(
+      decoration: BoxDecoration(
+        color: cardColor.withValues(alpha: 0.05),
         borderRadius: const BorderRadius.all(Radius.circular(20.0)),
-        //color: AppColors.getTheme().rootBackground,
         border: Border.all(
-          color: AppColors.getTheme().errorRed,
-          width: 1
+            color: cardColor.withValues(alpha: 0.5),
+            width: 1
         ),
-      ) : null,
+      ),
       child: Column(
         mainAxisSize: MainAxisSize.max,
         children: [
           Text(
             name,
+            textAlign: TextAlign.center,
             style: TextStyle(
               color: AppColors.getTheme().textColor,
-              fontWeight: FontWeight.w600,
-              fontSize: 14.0,
+              fontWeight: FontWeight.w700,
+              fontSize: 15.0 * fontScale,
             ),
           ),
+          const SizedBox(height: 10),
           Row(
             mainAxisSize: MainAxisSize.max,
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               EmojiRichText(
-                text: isMissed ? '🙉' : '💰',
+                text: completed ? '✅' : isMissed ? '🙉' : '💰',
                 defaultStyle: TextStyle(
                   color: AppColors.getTheme().onPrimaryContainer,
                   fontWeight: FontWeight.w900,
-                  fontSize: 20.0,
+                  fontSize: 20.0 * fontScale,
                 ),
                 emojiStyle: TextStyle(
                     color: AppColors.getTheme().onPrimaryContainer,
-                    fontSize: isMissed ? 26.1 : 20.0,
+                    fontSize: (isMissed ? 26.0 : 20.0) * fontScale,
                     fontFamily: "Noto Color Emoji"
                 ),
               ),
@@ -62,9 +75,9 @@ class PaymentElementWidget extends StatelessWidget{
                   child: Text(
                     AppStrings.getStringWithParams(AppStrings.getLanguagePack().paymentPage_MoneyDisplay, [ammount]),
                     style: TextStyle(
-                      color: AppColors.getTheme().onPrimaryContainer,
-                      fontWeight: FontWeight.w800,
-                      fontSize: 16.0,
+                      color: cardColor,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 18.0 * fontScale,
                     ),
                     textAlign: TextAlign.center,
                   )
@@ -81,16 +94,16 @@ class PaymentElementWidget extends StatelessWidget{
                       style: TextStyle(
                         color: AppColors.getTheme().textColor.withValues(alpha: 0.7),
                         fontWeight: FontWeight.w400,
-                        fontSize: 12.0,
+                        fontSize: 12.0 * fontScale,
                       ),
                       textAlign: TextAlign.center,
                     ),
                     Text(
                       '${Generic.monthToText(dueDate.month)} ${dueDate.day}',
                       style: TextStyle(
-                        color: AppColors.getTheme().onPrimaryContainer,
+                        color: AppColors.getTheme().textColor,
                         fontWeight: FontWeight.w700,
-                        fontSize: 14.0,
+                        fontSize: 14.0 * fontScale,
                       ),
                       textAlign: TextAlign.center,
                     )
@@ -99,12 +112,13 @@ class PaymentElementWidget extends StatelessWidget{
               ) : const SizedBox(),
             ],
           ),
-          !isNonTimed ? Text(
+          const SizedBox(height: 5),
+          !isNonTimed && !completed ? Text(
             isMissed ? AppStrings.getStringWithParams(AppStrings.getLanguagePack().paymentPage_PaymentMissedTime, [-(Duration(milliseconds: dueDateMs - nowMs).inDays + 1)]) : AppStrings.getStringWithParams(AppStrings.getLanguagePack().paymentPage_PaymentDeadlineTime, [Duration(milliseconds: dueDateMs - nowMs).inDays + 1]),
             style: TextStyle(
-              color: AppColors.getTheme().textColor.withValues(alpha: 0.5),
+              color: isMissed ? AppColors.getTheme().errorRed.withValues(alpha: 0.8) : AppColors.getTheme().textColor.withValues(alpha: 0.5),
               fontWeight: FontWeight.w600,
-              fontSize: 12,
+              fontSize: 12.0 * fontScale,
             ),
             textAlign: TextAlign.center,
           ) : const SizedBox(),
