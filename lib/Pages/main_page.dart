@@ -20,7 +20,7 @@ import 'package:neptun2/PaymentsElements/payment_element_widget.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../API/api_coms.dart' as api;
-import '../app_update.dart';
+import '../Misc/auto_updater.dart';
 import '../haptics.dart';
 import '../storage.dart' as storage;
 import '../TimetableElements/timetable_element_widget.dart' as t_table;
@@ -177,8 +177,9 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin{
       ICSCalendar.initialize();
     }
 
-    Future.delayed(Duration(seconds: 4), ()async{
-      await AppUpdate.doUpdateRequest(context, null, null);
+    Future.delayed(const Duration(seconds: 4), () async {
+      // Az új letöltő meghívása
+      await AppUpdater.checkAndInstallUpdate(context);
     });
 
     Future.delayed(Duration(seconds: 4),()async{
@@ -194,6 +195,9 @@ class HomePageState extends State<HomePage> with TickerProviderStateMixin{
         final timeZoneInfo = await FlutterTimezone.getLocalTimezone();
         final String timeZone = timeZoneInfo.identifier;
         tz.setLocalLocation(tz.getLocation(timeZone));
+      });
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        AppUpdater.checkAndInstallUpdate(context);
       });
     }
 
