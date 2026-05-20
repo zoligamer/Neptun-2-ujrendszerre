@@ -41,33 +41,13 @@ class TimetableElementWidget extends StatelessWidget {
 
     displayStartTime = "$hour:$minute";
 
-    date = DateTime.fromMillisecondsSinceEpoch(entry.endEpoch).subtract(
-        Duration(hours: date.hour, minutes: date.minute));
-    hour = date.hour.toString().padLeft(2, '0');
-    minute = date.minute.toString().padLeft(2, '0');
+    // Extract the end time directly without subtracting start time
+    var endDate = DateTime.fromMillisecondsSinceEpoch(entry.endEpoch);
+    hour = endDate.hour.toString().padLeft(2, '0');
+    minute = endDate.minute.toString().padLeft(2, '0');
 
-    var totalMins = date.hour * 60 + date.minute;
-
-    var realMinutes = 0;
-    var realHours = 0;
-    var i = 1;
-    for (
-    realMinutes = 0; realMinutes <= totalMins && realMinutes + 45 <= totalMins;
-    realMinutes += 45) {
-      if (i % 2 == 0) {
-        realHours++;
-      }
-      i++;
-    }
-    realMinutes -= realHours * 60;
-
-    date = DateTime.fromMillisecondsSinceEpoch(entry.startEpoch).add(
-        Duration(hours: realHours, minutes: realMinutes));
-    hour = date.hour.toString().padLeft(2, '0');
-    minute = date.minute.toString().padLeft(2, '0');
     displayEndTime = "$hour:$minute";
-
-    endDateNormalized = date;
+    endDateNormalized = endDate;
 
     if (endDateNormalized.millisecondsSinceEpoch < DateTime
         .now()
@@ -363,31 +343,9 @@ class FreedayElementWidget extends StatelessWidget{
 class WeekoffseterElementWidget extends StatelessWidget{
   final HomePageState homePage;
 
-  WeekoffseterElementWidget({super.key, required this.week, required this.from, required this.to, required this.onBackPressed, required this.onForwardPressed, required this.canDoPaging, required this.homePage, required this.isLoading}){
-    final startMonth = from != null ? api.Generic.monthToText(from!.month) : "_";
-    final startDay = from != null ? from!.day : "";
+  WeekoffseterElementWidget({super.key, required this.week, required this.from, required this.to, required this.onBackPressed, required this.onForwardPressed, required this.canDoPaging, required this.homePage, required this.isLoading});
 
-    final endMonth = api.Generic.monthToText(to.month);
-    final endDay = to.day;
-
-    displayString = AppStrings.getStringWithParams(AppStrings.getLanguagePack().calendarPage_weekNav_StudyWeek, [week]);
-
-    if(isLoading){
-      displayString2 = AppStrings.getLanguagePack().calendarPage_weekNav_ClassesThisWeekLoading;
-      return;
-    }
-
-    if(startMonth == "_"){
-      displayString2 = AppStrings.getLanguagePack().calendarPage_weekNav_ClassesThisWeekEmpty;
-      return;
-    }
-    if("$startMonth $startDay" == "$endMonth $endDay"){
-      displayString2 = AppStrings.getStringWithParams(AppStrings.getLanguagePack().calendarPage_weekNav_ClassesThisWeekOneDay, [endMonth, endDay, api.Generic.dayToText(to.weekday)]);
-    }
-    else{
-      displayString2 = AppStrings.getStringWithParams(AppStrings.getLanguagePack().calendarPage_weekNav_ClassesThisWeekFull, [startMonth, startDay, endMonth, endDay]);
-    }
-  }
+  WeekoffseterElementWidget.empty({super.key, required this.homePage}) : week = 0, from = null, to = DateTime.now(), onBackPressed = (() async {}), onForwardPressed = (() async {}), canDoPaging = false, isLoading = true;
 
   final bool canDoPaging;
   final int week;
@@ -404,6 +362,34 @@ class WeekoffseterElementWidget extends StatelessWidget{
 
   @override
   Widget build(BuildContext context) {
+    final startMonth = from != null ? api.Generic.monthToText(from!.month) : "_";
+    final startDay = from != null ? from!.day : "";
+
+    final endMonth = api.Generic.monthToText(to.month);
+    final endDay = to.day;
+
+    String displayString = AppStrings.getStringWithParams(AppStrings.getLanguagePack().calendarPage_weekNav_StudyWeek, [week]);
+
+    if(isLoading){
+      String displayString2 = AppStrings.getLanguagePack().calendarPage_weekNav_ClassesThisWeekLoading;
+      return _buildWidget(context, displayString, displayString2);
+    }
+
+    if(startMonth == "_"){
+      String displayString2 = AppStrings.getLanguagePack().calendarPage_weekNav_ClassesThisWeekEmpty;
+      return _buildWidget(context, displayString, displayString2);
+    }
+    if("$startMonth $startDay" == "$endMonth $endDay"){
+      String displayString2 = AppStrings.getStringWithParams(AppStrings.getLanguagePack().calendarPage_weekNav_ClassesThisWeekOneDay, [endMonth, endDay, api.Generic.dayToText(to.weekday)]);
+      return _buildWidget(context, displayString, displayString2);
+    }
+    else{
+      String displayString2 = AppStrings.getStringWithParams(AppStrings.getLanguagePack().calendarPage_weekNav_ClassesThisWeekFull, [startMonth, startDay, endMonth, endDay]);
+      return _buildWidget(context, displayString, displayString2);
+    }
+  }
+
+  Widget _buildWidget(BuildContext context, String displayString, String displayString2) {
     return GestureDetector(
       onHorizontalDragStart: (_){
         homePage.calendarWeekCanNavigate = true;
