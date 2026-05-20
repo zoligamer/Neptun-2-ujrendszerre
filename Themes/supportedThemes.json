@@ -2,22 +2,22 @@
  "themesMap":[
    {
     "themeName":"E-Ink",
-    "themeURL":"https://raw.githubusercontent.com/domedav/Neptun-2/main/Themes/ThemeExtentions/E-Ink.json",
+    "themeURL":"https://raw.githubusercontent.com/zoligamer/Neptun-Mobile-fork/refs/heads/main/Themes/ThemeExtentions/E-Ink.json",
     "themeAccent":-4084353
    },
    {
     "themeName":"Gum",
-    "themeURL":"https://raw.githubusercontent.com/domedav/Neptun-2/main/Themes/ThemeExtentions/Gum.json",
+    "themeURL":"https://raw.githubusercontent.com/zoligamer/Neptun-Mobile-fork/refs/heads/main/Themes/ThemeExtentions/Gum.json",
     "themeAccent":-7442269
    },
    {
     "themeName":"Forest",
-    "themeURL":"https://raw.githubusercontent.com/domedav/Neptun-2/main/Themes/ThemeExtentions/Forest.json",
+    "themeURL":"https://raw.githubusercontent.com/zoligamer/Neptun-Mobile-fork/refs/heads/main/Themes/ThemeExtentions/Forest.json",
     "themeAccent":4285567827
    },
    {
      "themeName":"Blu",
-     "themeURL":"https://raw.githubusercontent.com/domedav/Neptun-2/main/Themes/ThemeExtentions/Blu.json",
+     "themeURL":"https://raw.githubusercontent.com/zoligamer/Neptun-Mobile-fork/refs/heads/main/Themes/ThemeExtentions/Blu.json",
      "themeAccent":4282358951
    }
  ] 

@@ -1745,7 +1745,7 @@ class CashinEntry{
       return (daylightSavingsTimeFrom.microsecondsSinceEpoch < time.microsecondsSinceEpoch && time.microsecondsSinceEpoch < daylightSavingsTimeTo.microsecondsSinceEpoch);
     }
     static Future<AppUpdateHelper?> getAppUpdateHelper() async{
-      final url = Uri.parse('https://raw.githubusercontent.com/domedav/Neptun-2/main/appMinimumAllowedVersion.json');
+      final url = Uri.parse('https://raw.githubusercontent.com/zoligamer/Neptun-Mobile-fork/refs/heads/main/appMinimumAllowedVersion.json');
       final response = await http.get(url);
 
       if (response.statusCode != 200) {
@@ -1825,7 +1825,7 @@ class CashinEntry{
       if(_langMapCache != null){
         return _langMapCache;
       }
-      final url = Uri.parse('https://raw.githubusercontent.com/domedav/Neptun-2/main/Languages/supportedLanguages.json');
+      final url = Uri.parse('https://raw.githubusercontent.com/zoligamer/Neptun-Mobile-fork/refs/heads/main/Languages/supportedLanguages.json');
       final response = await http.get(url);
 
       if (response.statusCode != 200) {
@@ -1868,7 +1868,7 @@ class CashinEntry{
       if(_themeMapCache != null){
         return _themeMapCache;
       }
-      final url = Uri.parse('https://raw.githubusercontent.com/domedav/Neptun-2/main/Themes/supportedThemes.json');
+      final url = Uri.parse('https://raw.githubusercontent.com/zoligamer/Neptun-Mobile-fork/refs/heads/main/Themes/supportedThemes.json');
       final response = await http.get(url);
 
       if (response.statusCode != 200) {
