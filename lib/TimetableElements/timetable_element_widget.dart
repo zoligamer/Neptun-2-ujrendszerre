@@ -89,7 +89,6 @@ class TimetableElementWidget extends StatelessWidget {
                       return const SizedBox(height: 100, child: Center(child: CircularProgressIndicator()));
                     }
 
-                    // Offline memóriából azonnal betöltjük az adatokat!
                     return FutureBuilder<String?>(
                         future: storage.getString('task_res_${entry.taskId}'),
                         builder: (context, resSnapshot) {
@@ -160,7 +159,7 @@ class TimetableElementWidget extends StatelessWidget {
           }
         );
       } else {
-        // Ha régi API, vagy nincs ID, a régi megszokott popup jön fel
+
         TimetableCurrentlySelected.entry = entry;
         PopupWidgetHandler(mode: 4, callback: (_) {});
         PopupWidgetHandler.doPopup(context);
@@ -188,28 +187,27 @@ class TimetableElementWidget extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.max,
           children: [
-            // BAL OLDAL: Sorszám vagy Figyelmeztető Ikon
+
             Container(
-              margin: const EdgeInsets.fromLTRB(0, 0, 20, 0), // Kicsit szűkítettem a margón a nagyobb betűk miatt
+              margin: const EdgeInsets.fromLTRB(0, 0, 20, 0),
               child: (!isExam && !isTask) ? Text(
                 "$position.",
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: currentOverride ? AppColors.getTheme().currentClassGreen : AppColors.getTheme().onPrimaryContainer,
                   fontWeight: FontWeight.w900,
-                  // MEGNÖVELVE ÉS SZOROZVA
+
                   fontSize: 26.0 * fontScale,
                 ),
                 maxLines: 1,
               ) : Icon(
                   Icons.warning_rounded,
                   color: isExam ? AppColors.getTheme().errorRed : Colors.amber.shade600,
-                  // IKON IS SKÁLÁZÓDIK
+
                   size: 28.0 * fontScale,
               ),
             ),
 
-            // KÖZÉP: Tantárgy neve és Terem
             Expanded(
               flex: 3,
               child: Column(
@@ -221,16 +219,15 @@ class TimetableElementWidget extends StatelessWidget {
                     title,
                     style: TextStyle(
                       color: AppColors.getTheme().textColor,
-                      // Alap 15.0-ról 16.0-ra növelve + szorzó
+                      // Alap 15.0-ról 16.0-ra
                       fontSize: 16.0 * fontScale,
                       fontWeight: FontWeight.w700
                     )
                   ),
-                  const SizedBox(height: 2), // Pici térköz
+                  const SizedBox(height: 2),
                   Visibility(
                     visible: entry.location.trim().isNotEmpty,
                     child: Text(
-                      // JAVÍTVA: A "Nincs terem" kikerült a feltételből!
                       entry.location == "Nincs megadva" || entry.location.isEmpty || entry.location == "NULL"
                           ? "⏳ Terem betöltése..."
                           : entry.location,
@@ -245,7 +242,6 @@ class TimetableElementWidget extends StatelessWidget {
               ),
             ),
 
-            // JOBB OLDAL: Időpontok
             Expanded(
               flex: 2,
               child: currentOverride ? Row(
@@ -256,7 +252,7 @@ class TimetableElementWidget extends StatelessWidget {
                   Icon(
                     Icons.timelapse_rounded,
                     color: AppColors.getTheme().currentClassGreen,
-                    size: 20 * fontScale, // Ikon is nő
+                    size: 20 * fontScale,
                   ),
                   const SizedBox(width: 4),
                   Flexible(
@@ -266,7 +262,7 @@ class TimetableElementWidget extends StatelessWidget {
                       style: TextStyle(
                         color: AppColors.getTheme().currentClassGreen,
                         fontWeight: FontWeight.w700,
-                        // Alap 14.0-ról 15.0-ra növelve + szorzó
+                        // Alap 14.0-ról 15.0-ra
                         fontSize: 15.0 * fontScale,
                       ),
                     ),
@@ -283,7 +279,6 @@ class TimetableElementWidget extends StatelessWidget {
                     style: TextStyle(
                       color: isExam ? AppColors.getTheme().errorRed : AppColors.getTheme().onPrimaryContainer,
                       fontWeight: FontWeight.w700,
-                      // Alapméret megnövelve + szorzó
                       fontSize: (!isExam ? 15.0 : 17.0) * fontScale,
                     ),
                   ),
@@ -294,7 +289,6 @@ class TimetableElementWidget extends StatelessWidget {
                     style: TextStyle(
                       color: AppColors.getTheme().onPrimary.withValues(alpha: .8),
                       fontWeight: FontWeight.w600,
-                      // Alap 12.0-ról 13.0-ra növelve + szorzó
                       fontSize: 13.0 * fontScale,
                     ),
                   ) : const SizedBox(),
